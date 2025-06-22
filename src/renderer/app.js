@@ -144,31 +144,33 @@ class PhotoCatalogApp {
         this.showLoading(true);
 
         try {
-            // First get total count for the date range
             if (reset) {
-                const countOptions = { ...this.currentFilters, limit: 999999, offset: 0 };
-                const allPhotos = await window.electronAPI.getPhotos(countOptions);
-                this.totalPhotosInRange = allPhotos.length;
+                this.currentPage = 1;
+                this.currentOffset = 0;
             }
 
             const options = {
                 limit: this.gridDimensions.photosPerPage,
-                offset: reset ? 0 : this.currentOffset,
+                offset: this.currentOffset,
                 ...this.currentFilters
             };
 
+            console.log('Loading photos with options:', options);
             const photos = await window.electronAPI.getPhotos(options);
+            console.log('Received photos:', photos.length);
             
-            if (reset) {
-                this.photos = photos;
-                this.currentOffset = photos.length;
-                this.currentPage = 1;
-                this.renderGallery();
-            } else {
-                this.photos = photos;
-                this.renderGallery();
-            }
+            this.photos = photos;
+            
+            // Get total count for pagination - use a separate query without limit/offset
+            const countOptions = { ...this.currentFilters };
+            delete countOptions.limit;
+            delete countOptions.offset;
+            const allPhotos = await window.electronAPI.getPhotos({ ...countOptions, limit: 999999, offset: 0 });
+            this.totalPhotosInRange = allPhotos.length;
+            
+            console.log('Total photos in range:', this.totalPhotosInRange);
 
+            this.renderGallery();
             this.updatePhotoCount();
             this.updatePaginationControls();
 
@@ -389,9 +391,11 @@ class PhotoCatalogApp {
         if (this.favoritesOnly) {
             this.currentFilters.isFavorite = true;
         } else {
+            // Explicitly remove the filter when favorites is turned off
             delete this.currentFilters.isFavorite;
         }
 
+        console.log('Applying filters:', this.currentFilters);
         this.loadPhotos(true);
     }
 
