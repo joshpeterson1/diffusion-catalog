@@ -45,17 +45,9 @@ class MetadataExtractor {
 
   async extractMetadata(imageId, filePath) {
     try {
-      // Extract comprehensive EXIF data - get ALL fields first to see what's available
+      // Extract comprehensive EXIF data
       const exifData = await exifr.parse(filePath);
       
-      // Log all available EXIF fields for debugging
-      if (exifData) {
-        console.log(`EXIF fields available for ${path.basename(filePath)}:`, Object.keys(exifData));
-        if (exifData.Parameters) {
-          console.log('Parameters field found:', exifData.Parameters);
-        }
-      }
-
       // Get image dimensions using Sharp
       const metadata = await sharp(filePath).metadata();
       
@@ -75,6 +67,7 @@ class MetadataExtractor {
       // Extract AI metadata if present
       const aiMetadata = this.extractAiMetadata(exifData, filePath);
       if (aiMetadata) {
+        console.log(`Saving AI metadata for ${path.basename(filePath)}:`, aiMetadata);
         await this.database.addAiMetadata(imageId, aiMetadata);
       }
       
@@ -115,15 +108,6 @@ class MetadataExtractor {
       exifData.workflow,
       exifData.Comment
     ];
-    
-    // Log what we're checking
-    console.log('Checking text fields for AI metadata:');
-    textFields.forEach((field, index) => {
-      const fieldNames = ['Parameters', 'UserComment', 'ImageDescription', 'Software', 'Artist', 'Copyright', 'XPComment', 'XPKeywords', 'prompt', 'workflow', 'Comment'];
-      if (field) {
-        console.log(`  ${fieldNames[index]}: ${typeof field === 'string' ? field.substring(0, 100) + '...' : field}`);
-      }
-    });
     
     // Try to parse AI data from each field
     for (const text of textFields) {
