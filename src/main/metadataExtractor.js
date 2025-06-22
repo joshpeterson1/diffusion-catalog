@@ -45,9 +45,14 @@ class MetadataExtractor {
 
   async extractMetadata(imageId, filePath) {
     try {
-      // Extract EXIF data
+      // Extract comprehensive EXIF data
       const exifData = await exifr.parse(filePath, {
-        pick: ['DateTimeOriginal', 'CreateDate', 'ModifyDate', 'ImageWidth', 'ImageHeight', 'UserComment', 'ImageDescription']
+        pick: [
+          'DateTimeOriginal', 'CreateDate', 'ModifyDate', 
+          'ImageWidth', 'ImageHeight', 'UserComment', 'ImageDescription',
+          'Software', 'Artist', 'Copyright', 'XPComment', 'XPKeywords',
+          'Parameters', 'prompt', 'workflow', 'Comment'
+        ]
       });
 
       // Get image dimensions using Sharp
@@ -95,15 +100,28 @@ class MetadataExtractor {
     
     let aiData = {};
     
-    // Check common AI metadata locations
-    const textFields = [exifData.UserComment, exifData.ImageDescription];
+    // Check all possible EXIF fields that might contain AI metadata
+    const textFields = [
+      exifData.UserComment,
+      exifData.ImageDescription,
+      exifData.Software,
+      exifData.Artist,
+      exifData.Copyright,
+      exifData.XPComment,
+      exifData.XPKeywords,
+      exifData.Parameters,
+      exifData.prompt,
+      exifData.workflow,
+      exifData.Comment
+    ];
     
+    // Try to parse AI data from each field
     for (const text of textFields) {
       if (text && typeof text === 'string') {
-        // Parse common AI generation formats
-        aiData = this.parseAiText(text);
-        if (Object.keys(aiData).length > 0) {
-          break;
+        const parsedData = this.parseAiText(text);
+        if (Object.keys(parsedData).length > 0) {
+          // Merge parsed data, giving priority to first found values
+          aiData = { ...parsedData, ...aiData };
         }
       }
     }
@@ -120,27 +138,69 @@ class MetadataExtractor {
   parseAiText(text) {
     const aiData = {};
     
-    // Common patterns for AI metadata
+    // Enhanced patterns for AI metadata - more comprehensive matching
     const patterns = {
-      prompt: /(?:^|\n)(?:Prompt|prompt):\s*(.+?)(?:\n|$)/i,
-      negativePrompt: /(?:^|\n)(?:Negative prompt|negative_prompt):\s*(.+?)(?:\n|$)/i,
-      model: /(?:^|\n)(?:Model|model):\s*(.+?)(?:\n|$)/i,
-      steps: /(?:^|\n)(?:Steps|steps):\s*(\d+)/i,
-      cfgScale: /(?:^|\n)(?:CFG Scale|cfg_scale):\s*([\d.]+)/i,
-      seed: /(?:^|\n)(?:Seed|seed):\s*(\d+)/i,
-      sampler: /(?:^|\n)(?:Sampler|sampler):\s*(.+?)(?:\n|$)/i
+      prompt: [
+        /(?:^|\n)(?:Prompt|prompt):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is,
+        /(?:^|\n)(?:Positive prompt|positive_prompt):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is,
+        /^(.+?)(?:\nNegative prompt:|$)/is // Fallback: everything before "Negative prompt:"
+      ],
+      negativePrompt: [
+        /(?:^|\n)(?:Negative prompt|negative_prompt):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is,
+        /(?:^|\n)(?:Negative|neg):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is
+      ],
+      model: [
+        /(?:^|\n)(?:Model|model):\s*(.+?)(?:\n|,|$)/i,
+        /(?:^|\n)(?:Model hash|model_hash):\s*(.+?)(?:\n|,|$)/i,
+        /(?:^|\n)(?:Checkpoint|checkpoint):\s*(.+?)(?:\n|,|$)/i
+      ],
+      steps: [
+        /(?:^|\n)(?:Steps|steps):\s*(\d+)/i,
+        /(?:^|\n)(?:Sampling steps|sampling_steps):\s*(\d+)/i
+      ],
+      cfgScale: [
+        /(?:^|\n)(?:CFG Scale|cfg_scale|CFG|cfg):\s*([\d.]+)/i,
+        /(?:^|\n)(?:Guidance scale|guidance_scale):\s*([\d.]+)/i
+      ],
+      seed: [
+        /(?:^|\n)(?:Seed|seed):\s*(-?\d+)/i
+      ],
+      sampler: [
+        /(?:^|\n)(?:Sampler|sampler):\s*(.+?)(?:\n|,|$)/i,
+        /(?:^|\n)(?:Sampling method|sampling_method):\s*(.+?)(?:\n|,|$)/i
+      ],
+      scheduler: [
+        /(?:^|\n)(?:Schedule type|schedule_type|Scheduler|scheduler):\s*(.+?)(?:\n|,|$)/i
+      ],
+      size: [
+        /(?:^|\n)(?:Size|size):\s*(\d+x\d+)/i,
+        /(?:^|\n)(?:Resolution|resolution):\s*(\d+x\d+)/i
+      ]
     };
     
-    for (const [key, pattern] of Object.entries(patterns)) {
-      const match = text.match(pattern);
-      if (match) {
-        let value = match[1].trim();
-        if (key === 'steps' || key === 'seed') {
-          value = parseInt(value);
-        } else if (key === 'cfgScale') {
-          value = parseFloat(value);
+    // Try each pattern for each field
+    for (const [key, patternArray] of Object.entries(patterns)) {
+      for (const pattern of patternArray) {
+        const match = text.match(pattern);
+        if (match && !aiData[key]) { // Only set if not already found
+          let value = match[1].trim();
+          
+          // Clean up common artifacts
+          value = value.replace(/,$/, ''); // Remove trailing comma
+          value = value.replace(/\s+/g, ' '); // Normalize whitespace
+          
+          // Type conversion
+          if (key === 'steps' || key === 'seed') {
+            value = parseInt(value);
+          } else if (key === 'cfgScale') {
+            value = parseFloat(value);
+          }
+          
+          if (value !== '' && !isNaN(value) || typeof value === 'string') {
+            aiData[key] = value;
+          }
+          break; // Found a match, move to next field
         }
-        aiData[key] = value;
       }
     }
     

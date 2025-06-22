@@ -289,7 +289,7 @@ class PhotoCatalogApp {
 
         // AI info
         const aiInfo = document.getElementById('aiInfo');
-        if (metadata.prompt || metadata.model) {
+        if (metadata.prompt || metadata.model || metadata.steps || metadata.seed) {
             aiInfo.innerHTML = `
                 ${metadata.prompt ? `<div><strong>Prompt:</strong> ${metadata.prompt}</div>` : ''}
                 ${metadata.negative_prompt ? `<div><strong>Negative Prompt:</strong> ${metadata.negative_prompt}</div>` : ''}
@@ -298,9 +298,11 @@ class PhotoCatalogApp {
                 ${metadata.cfg_scale ? `<div><strong>CFG Scale:</strong> ${metadata.cfg_scale}</div>` : ''}
                 ${metadata.seed ? `<div><strong>Seed:</strong> ${metadata.seed}</div>` : ''}
                 ${metadata.sampler ? `<div><strong>Sampler:</strong> ${metadata.sampler}</div>` : ''}
+                ${metadata.scheduler ? `<div><strong>Scheduler:</strong> ${metadata.scheduler}</div>` : ''}
+                ${metadata.size ? `<div><strong>Generation Size:</strong> ${metadata.size}</div>` : ''}
             `;
         } else {
-            aiInfo.innerHTML = '<div>No AI metadata found</div>';
+            aiInfo.innerHTML = '<div>No AI metadata found in EXIF data</div>';
         }
 
         // User metadata
