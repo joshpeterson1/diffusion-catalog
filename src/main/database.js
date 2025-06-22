@@ -119,7 +119,11 @@ class DatabaseManager {
     } = options;
 
     let query = `
-      SELECT i.*, u.is_favorite, u.is_nsfw, u.custom_tags, u.rating
+      SELECT i.*, 
+             COALESCE(u.is_favorite, 0) as is_favorite, 
+             COALESCE(u.is_nsfw, 0) as is_nsfw, 
+             u.custom_tags, 
+             u.rating
       FROM images i
       LEFT JOIN user_metadata u ON i.id = u.image_id
       WHERE 1=1
@@ -137,9 +141,8 @@ class DatabaseManager {
       params.push(endDate);
     }
     
-    if (isFavorite !== undefined) {
-      query += ' AND u.is_favorite = ?';
-      params.push(isFavorite ? 1 : 0);
+    if (isFavorite !== undefined && isFavorite === true) {
+      query += ' AND u.is_favorite = 1';
     }
     
     query += ` ORDER BY i.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
