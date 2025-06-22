@@ -119,3 +119,13 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+app.on('before-quit', () => {
+  // Clean up resources
+  if (photoApp.fileWatcher) {
+    photoApp.fileWatcher.close();
+  }
+  if (photoApp.database) {
+    photoApp.database.close();
+  }
+});

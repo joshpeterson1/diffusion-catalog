@@ -315,6 +315,27 @@ class PhotoCatalogApp {
             aiInfo.innerHTML = '<div>No AI metadata found in EXIF data</div>';
         }
 
+        // Other metadata (EXIF, camera info, etc.)
+        const otherInfo = document.getElementById('otherInfo');
+        const otherFields = [];
+        
+        // Add any other interesting metadata fields
+        if (metadata.width && metadata.height) {
+            otherFields.push(`<div><strong>Original Dimensions:</strong> ${metadata.width} × ${metadata.height}</div>`);
+        }
+        if (metadata.date_added) {
+            otherFields.push(`<div><strong>Date Added:</strong> ${new Date(metadata.date_added).toLocaleString()}</div>`);
+        }
+        if (metadata.hash) {
+            otherFields.push(`<div><strong>File Hash:</strong> ${metadata.hash}</div>`);
+        }
+        
+        if (otherFields.length > 0) {
+            otherInfo.innerHTML = otherFields.join('');
+        } else {
+            otherInfo.innerHTML = '<div>No additional metadata available</div>';
+        }
+
         // User metadata
         document.getElementById('favoriteCheck').checked = metadata.is_favorite || false;
         document.getElementById('nsfwCheck').checked = metadata.is_nsfw || false;
@@ -326,15 +347,32 @@ class PhotoCatalogApp {
     async savePhotoMetadata() {
         if (!this.currentPhoto) return;
 
+        // Validate inputs
+        const customTags = document.getElementById('customTags').value.trim();
+        const rating = document.getElementById('rating').value;
+        const notes = document.getElementById('notes').value.trim();
+
+        // Validate rating if provided
+        if (rating && (isNaN(rating) || rating < 1 || rating > 5)) {
+            alert('Rating must be between 1 and 5');
+            return;
+        }
+
         const metadata = {
             isFavorite: document.getElementById('favoriteCheck').checked,
             isNsfw: document.getElementById('nsfwCheck').checked,
-            customTags: document.getElementById('customTags').value,
-            rating: document.getElementById('rating').value || null,
-            notes: document.getElementById('notes').value
+            customTags: customTags || null,
+            rating: rating || null,
+            notes: notes || null
         };
 
         try {
+            // Show loading state
+            const saveBtn = document.getElementById('saveMetadata');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+
             await window.electronAPI.updateUserMetadata(this.currentPhoto.id, metadata);
             
             // Update the photo in our local array with the correct field names
@@ -351,9 +389,22 @@ class PhotoCatalogApp {
             // Also update the current photo object
             this.currentPhoto.is_favorite = metadata.isFavorite ? 1 : 0;
             this.currentPhoto.is_nsfw = metadata.isNsfw ? 1 : 0;
+
+            // Show success feedback
+            saveBtn.textContent = 'Saved!';
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }, 1000);
             
         } catch (error) {
             console.error('Error saving metadata:', error);
+            alert('Failed to save metadata. Please try again.');
+            
+            // Reset button
+            const saveBtn = document.getElementById('saveMetadata');
+            saveBtn.textContent = 'Save';
+            saveBtn.disabled = false;
         }
     }
 
@@ -430,8 +481,13 @@ class PhotoCatalogApp {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         
-        if (startDate) filters.startDate = startDate;
-        if (endDate) filters.endDate = endDate;
+        // Only add date filters if they're actually set and valid
+        if (startDate && startDate.trim() !== '' && this.isValidDate(startDate)) {
+            filters.startDate = startDate;
+        }
+        if (endDate && endDate.trim() !== '' && this.isValidDate(endDate)) {
+            filters.endDate = endDate;
+        }
         
         // Add favorites filter only if enabled
         if (this.favoritesOnly) {
@@ -541,6 +597,24 @@ class PhotoCatalogApp {
         } catch (error) {
             console.error('Error getting debug info:', error);
         }
+    }
+
+    isValidDate(dateString) {
+        const date = new Date(dateString);
+        return date instanceof Date && !isNaN(date);
+    }
+
+    cleanup() {
+        // Clean up event listeners and resources
+        window.removeEventListener('resize', this.handleResize);
+        document.removeEventListener('keydown', this.handleKeydown);
+        
+        // Clean up any object URLs if we were using them
+        this.photos.forEach(photo => {
+            if (photo.objectUrl) {
+                URL.revokeObjectURL(photo.objectUrl);
+            }
+        });
     }
 
     formatFileSize(bytes) {

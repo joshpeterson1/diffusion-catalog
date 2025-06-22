@@ -206,6 +206,14 @@ class MetadataExtractor {
     const thumbnailPath = path.join(this.thumbnailDir, thumbnailFilename);
     
     try {
+      // Check if thumbnail already exists
+      try {
+        await fs.access(thumbnailPath);
+        return thumbnailPath; // Thumbnail already exists
+      } catch {
+        // Thumbnail doesn't exist, create it
+      }
+
       await sharp(filePath)
         .resize(300, 300, { 
           fit: 'cover',
@@ -217,7 +225,8 @@ class MetadataExtractor {
       return thumbnailPath;
     } catch (error) {
       console.error(`Error generating thumbnail for ${filePath}:`, error);
-      return null;
+      // Return original file path as fallback
+      return filePath;
     }
   }
 }

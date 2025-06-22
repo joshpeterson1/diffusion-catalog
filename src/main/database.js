@@ -88,23 +88,28 @@ class DatabaseManager {
   }
 
   async addImage(imageData) {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO images 
-      (path, filename, date_taken, file_size, width, height, hash)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      imageData.path,
-      imageData.filename,
-      imageData.dateTaken,
-      imageData.fileSize,
-      imageData.width,
-      imageData.height,
-      imageData.hash
-    );
-    
-    return result.lastInsertRowid;
+    try {
+      const stmt = this.db.prepare(`
+        INSERT OR REPLACE INTO images 
+        (path, filename, date_taken, file_size, width, height, hash)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const result = stmt.run(
+        imageData.path,
+        imageData.filename,
+        imageData.dateTaken,
+        imageData.fileSize,
+        imageData.width,
+        imageData.height,
+        imageData.hash
+      );
+      
+      return result.lastInsertRowid;
+    } catch (error) {
+      console.error('Error adding image to database:', error);
+      throw error;
+    }
   }
 
   async getPhotos(options = {}) {
@@ -239,20 +244,34 @@ class DatabaseManager {
   }
 
   async updateUserMetadata(imageId, metadata) {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO user_metadata 
-      (image_id, is_favorite, is_nsfw, custom_tags, rating, notes)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    
-    return stmt.run(
-      imageId,
-      metadata.isFavorite ? 1 : 0,  // Convert boolean to integer
-      metadata.isNsfw ? 1 : 0,      // Convert boolean to integer
-      metadata.customTags || null,
-      metadata.rating || null,
-      metadata.notes || null
-    );
+    try {
+      // Validate inputs
+      if (!imageId || typeof imageId !== 'number') {
+        throw new Error('Invalid image ID');
+      }
+
+      if (metadata.rating && (metadata.rating < 1 || metadata.rating > 5)) {
+        throw new Error('Rating must be between 1 and 5');
+      }
+
+      const stmt = this.db.prepare(`
+        INSERT OR REPLACE INTO user_metadata 
+        (image_id, is_favorite, is_nsfw, custom_tags, rating, notes)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      
+      return stmt.run(
+        imageId,
+        metadata.isFavorite ? 1 : 0,  // Convert boolean to integer
+        metadata.isNsfw ? 1 : 0,      // Convert boolean to integer
+        metadata.customTags || null,
+        metadata.rating || null,
+        metadata.notes || null
+      );
+    } catch (error) {
+      console.error('Error updating user metadata:', error);
+      throw error;
+    }
   }
 
   async addAiMetadata(imageId, aiData) {
