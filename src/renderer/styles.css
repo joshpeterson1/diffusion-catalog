@@ -289,7 +289,6 @@ body {
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin-bottom: 10px;
 }
 
 .pagination-controls button {
@@ -317,23 +316,6 @@ body {
     min-width: 80px;
 }
 
-.load-more-container {
-    margin-top: 10px;
-}
-
-.load-more-container button {
-    padding: 8px 16px;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    background-color: #4a4a4a;
-    color: #ffffff;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.load-more-container button:hover {
-    background-color: #5a5a5a;
-}
 
 /* Modal Styles */
 .modal {

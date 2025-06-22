@@ -8,6 +8,7 @@ class PhotoCatalogApp {
         this.viewMode = 'grid'; // 'grid' or 'list'
         this.currentPage = 1;
         this.favoritesOnly = false;
+        this.totalPhotosInRange = 0;
         
         this.initializeEventListeners();
         this.setDefaultDateRange();
@@ -36,10 +37,9 @@ class PhotoCatalogApp {
         document.getElementById('sortBy').addEventListener('change', () => this.applyFilters());
         document.getElementById('sortOrder').addEventListener('change', () => this.applyFilters());
 
-        // Pagination and load more
+        // Pagination
         document.getElementById('prevPageBtn').addEventListener('click', () => this.previousPage());
         document.getElementById('nextPageBtn').addEventListener('click', () => this.nextPage());
-        document.getElementById('loadMoreBtn').addEventListener('click', () => this.loadMorePhotos());
 
         // Modal controls
         document.querySelector('.close').addEventListener('click', () => this.closeModal());
@@ -58,11 +58,10 @@ class PhotoCatalogApp {
 
     setDefaultDateRange() {
         const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
         
-        document.getElementById('startDate').value = firstDayOfMonth.toISOString().split('T')[0];
-        document.getElementById('endDate').value = lastDayOfMonth.toISOString().split('T')[0];
+        document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        document.getElementById('endDate').value = now.toISOString().split('T')[0];
     }
 
     setViewMode(mode) {
@@ -86,6 +85,13 @@ class PhotoCatalogApp {
         this.showLoading(true);
 
         try {
+            // First get total count for the date range
+            if (reset) {
+                const countOptions = { ...this.currentFilters, limit: 999999, offset: 0 };
+                const allPhotos = await window.electronAPI.getPhotos(countOptions);
+                this.totalPhotosInRange = allPhotos.length;
+            }
+
             const options = {
                 limit: 25, // 5x5 grid
                 offset: reset ? 0 : this.currentOffset,
@@ -100,13 +106,12 @@ class PhotoCatalogApp {
                 this.currentPage = 1;
                 this.renderGallery();
             } else {
-                this.photos.push(...photos);
-                this.currentOffset += photos.length;
-                this.appendToGallery(photos);
+                this.photos = photos;
+                this.renderGallery();
             }
 
             this.updatePhotoCount();
-            this.updatePaginationControls(photos.length === 25);
+            this.updatePaginationControls();
 
         } catch (error) {
             console.error('Error loading photos:', error);
@@ -116,9 +121,6 @@ class PhotoCatalogApp {
         }
     }
 
-    async loadMorePhotos() {
-        await this.loadPhotos(false);
-    }
 
     renderGallery() {
         const gallery = document.getElementById('galleryGrid');
@@ -287,7 +289,7 @@ class PhotoCatalogApp {
                 this.photos = results;
                 this.renderGallery();
                 this.updatePhotoCount();
-                this.updatePaginationControls(false);
+                this.updatePaginationControls();
             } catch (error) {
                 console.error('Error searching photos:', error);
             } finally {
@@ -330,14 +332,17 @@ class PhotoCatalogApp {
         if (this.currentPage > 1) {
             this.currentPage--;
             this.currentOffset = (this.currentPage - 1) * 25;
-            await this.loadPhotos(true);
+            await this.loadPhotos(false);
         }
     }
 
     async nextPage() {
-        this.currentPage++;
-        this.currentOffset = (this.currentPage - 1) * 25;
-        await this.loadPhotos(true);
+        const maxPages = Math.ceil(this.totalPhotosInRange / 25);
+        if (this.currentPage < maxPages) {
+            this.currentPage++;
+            this.currentOffset = (this.currentPage - 1) * 25;
+            await this.loadPhotos(false);
+        }
     }
 
     async addDirectory() {
@@ -363,17 +368,22 @@ class PhotoCatalogApp {
     }
 
     updatePhotoCount() {
-        document.getElementById('photoCount').textContent = `${this.photos.length} photos`;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const dateRangeText = startDate && endDate ? 
+            `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}` : 
+            'All dates';
+        
+        document.getElementById('photoCount').textContent = `${this.totalPhotosInRange} photos in range (${dateRangeText})`;
     }
 
-    updatePaginationControls(hasMore) {
+    updatePaginationControls() {
+        const maxPages = Math.ceil(this.totalPhotosInRange / 25);
+        
         // Update pagination buttons
         document.getElementById('prevPageBtn').disabled = this.currentPage === 1;
-        document.getElementById('nextPageBtn').disabled = !hasMore;
-        document.getElementById('pageInfo').textContent = `Page ${this.currentPage}`;
-        
-        // Show/hide load more button
-        document.getElementById('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
+        document.getElementById('nextPageBtn').disabled = this.currentPage >= maxPages;
+        document.getElementById('pageInfo').textContent = `Page ${this.currentPage} of ${maxPages}`;
     }
 
     showLoading(show) {
