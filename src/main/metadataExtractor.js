@@ -89,6 +89,32 @@ class MetadataExtractor {
     }
   }
 
+  // New method to extract raw EXIF data on demand
+  async extractRawExifData(filePath) {
+    try {
+      const exifData = await exifr.parse(filePath, {
+        tiff: true,
+        exif: true,
+        gps: true,
+        interop: true,
+        ifd0: true,
+        ifd1: true,
+        iptc: true,
+        icc: true,
+        jfif: true,
+        ihdr: true,
+        xmp: true,
+        chunked: true,
+        mergeOutput: true
+      });
+      
+      return exifData || {};
+    } catch (error) {
+      console.error(`Error extracting raw EXIF data for ${filePath}:`, error);
+      return {};
+    }
+  }
+
   extractDateTaken(exifData) {
     if (!exifData) return null;
     

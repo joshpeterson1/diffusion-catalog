@@ -319,12 +319,20 @@ class PhotoCatalogApp {
         // Load full metadata
         const fullMetadata = await window.electronAPI.getPhotoMetadata(photo.id);
         
+        // Load raw EXIF data on demand
+        let rawExifData = {};
+        try {
+            rawExifData = await window.electronAPI.getRawExifData(photo.path);
+        } catch (error) {
+            console.error('Error loading raw EXIF data:', error);
+        }
+        
         // Set image
         const modalImage = document.getElementById('modalImage');
         modalImage.src = `file://${photo.path}`;
         
-        // Populate metadata
-        this.populateMetadata(fullMetadata);
+        // Populate metadata with raw EXIF data
+        this.populateMetadata(fullMetadata, rawExifData);
         
         // Update navigation buttons
         this.updateNavigationButtons();
@@ -333,7 +341,7 @@ class PhotoCatalogApp {
         document.getElementById('photoModal').style.display = 'block';
     }
 
-    populateMetadata(metadata) {
+    populateMetadata(metadata, rawExifData = {}) {
         // File info
         const fileInfo = document.getElementById('fileInfo');
         fileInfo.innerHTML = `
@@ -344,23 +352,36 @@ class PhotoCatalogApp {
             <div><strong>Path:</strong> ${metadata.path}</div>
         `;
 
-        // AI info
+        // AI info - show raw EXIF data for debugging
         const aiInfo = document.getElementById('aiInfo');
+        
+        // First show any parsed AI metadata we have
+        let aiContent = '';
         if (metadata.prompt || metadata.model || metadata.steps || metadata.seed) {
-            aiInfo.innerHTML = `
-                ${metadata.prompt ? `<div><strong>Prompt:</strong> ${metadata.prompt}</div>` : ''}
-                ${metadata.negative_prompt ? `<div><strong>Negative Prompt:</strong> ${metadata.negative_prompt}</div>` : ''}
-                ${metadata.model ? `<div><strong>Model:</strong> ${metadata.model}</div>` : ''}
-                ${metadata.steps ? `<div><strong>Steps:</strong> ${metadata.steps}</div>` : ''}
-                ${metadata.cfg_scale ? `<div><strong>CFG Scale:</strong> ${metadata.cfg_scale}</div>` : ''}
-                ${metadata.seed ? `<div><strong>Seed:</strong> ${metadata.seed}</div>` : ''}
-                ${metadata.sampler ? `<div><strong>Sampler:</strong> ${metadata.sampler}</div>` : ''}
-                ${metadata.scheduler ? `<div><strong>Scheduler:</strong> ${metadata.scheduler}</div>` : ''}
-                ${metadata.size ? `<div><strong>Generation Size:</strong> ${metadata.size}</div>` : ''}
-            `;
-        } else {
-            aiInfo.innerHTML = '<div>No AI metadata found in EXIF data</div>';
+            aiContent += '<div><strong>Parsed AI Metadata:</strong></div>';
+            aiContent += `${metadata.prompt ? `<div><strong>Prompt:</strong> ${metadata.prompt}</div>` : ''}`;
+            aiContent += `${metadata.negative_prompt ? `<div><strong>Negative Prompt:</strong> ${metadata.negative_prompt}</div>` : ''}`;
+            aiContent += `${metadata.model ? `<div><strong>Model:</strong> ${metadata.model}</div>` : ''}`;
+            aiContent += `${metadata.steps ? `<div><strong>Steps:</strong> ${metadata.steps}</div>` : ''}`;
+            aiContent += `${metadata.cfg_scale ? `<div><strong>CFG Scale:</strong> ${metadata.cfg_scale}</div>` : ''}`;
+            aiContent += `${metadata.seed ? `<div><strong>Seed:</strong> ${metadata.seed}</div>` : ''}`;
+            aiContent += `${metadata.sampler ? `<div><strong>Sampler:</strong> ${metadata.sampler}</div>` : ''}`;
+            aiContent += `${metadata.scheduler ? `<div><strong>Scheduler:</strong> ${metadata.scheduler}</div>` : ''}`;
+            aiContent += `${metadata.size ? `<div><strong>Generation Size:</strong> ${metadata.size}</div>` : ''}`;
+            aiContent += '<br>';
         }
+        
+        // Show raw EXIF data
+        aiContent += '<div><strong>Raw EXIF Data:</strong></div>';
+        if (Object.keys(rawExifData).length > 0) {
+            aiContent += '<div style="max-height: 300px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap;">';
+            aiContent += JSON.stringify(rawExifData, null, 2);
+            aiContent += '</div>';
+        } else {
+            aiContent += '<div>No EXIF data found</div>';
+        }
+        
+        aiInfo.innerHTML = aiContent;
 
         // Other metadata (EXIF, camera info, etc.)
         const otherInfo = document.getElementById('otherInfo');
