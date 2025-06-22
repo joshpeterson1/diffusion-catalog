@@ -11,7 +11,7 @@ class PhotoCatalogApp {
         this.totalPhotosInRange = 0;
         this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25 };
         this.currentPhotoIndex = -1;
-        this.includeNsfw = false;
+        this.includeNsfw = true;
         this.selectedFolders = [];
         
         this.initializeEventListeners();
@@ -637,6 +637,12 @@ class PhotoCatalogApp {
         this.refreshPhotos();
     }
 
+    initializeFilters() {
+        // Set initial NSFW button state
+        const nsfwButton = document.getElementById('nsfwFilter');
+        nsfwButton.classList.add('active');
+    }
+
     refreshPhotos() {
         // Reset pagination
         this.currentPage = 1;
@@ -893,6 +899,9 @@ class PhotoCatalogApp {
         
         this.calculateGridDimensions();
         this.updateGridLayout();
+        
+        // Initialize filters
+        this.initializeFilters();
         
         // Load data
         await this.loadSubfolders();
