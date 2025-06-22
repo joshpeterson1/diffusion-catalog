@@ -91,6 +91,7 @@ class MetadataExtractor {
 
   // New method to extract raw EXIF data on demand
   async extractRawExifData(filePath) {
+    console.log(`EXTRACTING RAW EXIF for: ${filePath}`);
     try {
       const exifData = await exifr.parse(filePath, {
         tiff: true,
@@ -107,6 +108,11 @@ class MetadataExtractor {
         chunked: true,
         mergeOutput: true
       });
+      
+      console.log(`RAW EXIF RESULT:`, exifData ? Object.keys(exifData).length + ' fields found' : 'No EXIF data');
+      if (exifData && exifData.Parameters) {
+        console.log(`Parameters field found, length: ${exifData.Parameters.length}`);
+      }
       
       return exifData || {};
     } catch (error) {
