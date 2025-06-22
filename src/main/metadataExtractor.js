@@ -45,15 +45,16 @@ class MetadataExtractor {
 
   async extractMetadata(imageId, filePath) {
     try {
-      // Extract comprehensive EXIF data
-      const exifData = await exifr.parse(filePath, {
-        pick: [
-          'DateTimeOriginal', 'CreateDate', 'ModifyDate', 
-          'ImageWidth', 'ImageHeight', 'UserComment', 'ImageDescription',
-          'Software', 'Artist', 'Copyright', 'XPComment', 'XPKeywords',
-          'Parameters', 'prompt', 'workflow', 'Comment'
-        ]
-      });
+      // Extract comprehensive EXIF data - get ALL fields first to see what's available
+      const exifData = await exifr.parse(filePath);
+      
+      // Log all available EXIF fields for debugging
+      if (exifData) {
+        console.log(`EXIF fields available for ${path.basename(filePath)}:`, Object.keys(exifData));
+        if (exifData.Parameters) {
+          console.log('Parameters field found:', exifData.Parameters);
+        }
+      }
 
       // Get image dimensions using Sharp
       const metadata = await sharp(filePath).metadata();
@@ -102,6 +103,7 @@ class MetadataExtractor {
     
     // Check all possible EXIF fields that might contain AI metadata
     const textFields = [
+      exifData.Parameters,        // Put Parameters first since that's where AI data usually is
       exifData.UserComment,
       exifData.ImageDescription,
       exifData.Software,
@@ -109,11 +111,19 @@ class MetadataExtractor {
       exifData.Copyright,
       exifData.XPComment,
       exifData.XPKeywords,
-      exifData.Parameters,
       exifData.prompt,
       exifData.workflow,
       exifData.Comment
     ];
+    
+    // Log what we're checking
+    console.log('Checking text fields for AI metadata:');
+    textFields.forEach((field, index) => {
+      const fieldNames = ['Parameters', 'UserComment', 'ImageDescription', 'Software', 'Artist', 'Copyright', 'XPComment', 'XPKeywords', 'prompt', 'workflow', 'Comment'];
+      if (field) {
+        console.log(`  ${fieldNames[index]}: ${typeof field === 'string' ? field.substring(0, 100) + '...' : field}`);
+      }
+    });
     
     // Try to parse AI data from each field
     for (const text of textFields) {
