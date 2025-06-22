@@ -9,9 +9,11 @@ class PhotoCatalogApp {
         this.currentPage = 1;
         this.favoritesOnly = false;
         this.totalPhotosInRange = 0;
+        this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25 };
         
         this.initializeEventListeners();
         this.setDefaultDateRange();
+        this.calculateGridDimensions();
         this.loadPhotos();
     }
 
@@ -54,6 +56,15 @@ class PhotoCatalogApp {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.closeModal();
         });
+
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            this.calculateGridDimensions();
+            if (this.viewMode === 'grid') {
+                this.updateGridLayout();
+                this.loadPhotos(true); // Reload with new page size
+            }
+        });
     }
 
     setDefaultDateRange() {
@@ -62,6 +73,49 @@ class PhotoCatalogApp {
         
         document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
         document.getElementById('endDate').value = now.toISOString().split('T')[0];
+    }
+
+    calculateGridDimensions() {
+        const gallery = document.getElementById('galleryGrid');
+        if (!gallery) return;
+
+        const galleryRect = gallery.getBoundingClientRect();
+        const availableWidth = galleryRect.width - 40; // Account for padding
+        const availableHeight = galleryRect.height - 40;
+
+        const spacing = 50;
+        const minImageSize = 120; // Minimum viable image size
+
+        // Calculate maximum columns that fit with spacing
+        const maxCols = Math.floor((availableWidth + spacing) / (minImageSize + spacing));
+        const maxRows = Math.floor((availableHeight + spacing) / (minImageSize + spacing));
+
+        // Ensure minimum of 2x2 and maximum reasonable limits
+        const cols = Math.max(2, Math.min(maxCols, 12));
+        const rows = Math.max(2, Math.min(maxRows, 8));
+
+        // Calculate actual image size based on available space
+        const imageSize = Math.floor((availableWidth - (cols - 1) * spacing) / cols);
+
+        this.gridDimensions = {
+            cols: cols,
+            rows: rows,
+            photosPerPage: cols * rows,
+            imageSize: imageSize,
+            spacing: spacing
+        };
+
+        console.log(`Grid dimensions: ${cols}x${rows} = ${this.gridDimensions.photosPerPage} photos per page`);
+    }
+
+    updateGridLayout() {
+        const gallery = document.getElementById('galleryGrid');
+        if (!gallery || this.viewMode !== 'grid') return;
+
+        const { cols, imageSize, spacing } = this.gridDimensions;
+        
+        gallery.style.gridTemplateColumns = `repeat(${cols}, ${imageSize}px)`;
+        gallery.style.gap = `${spacing}px`;
     }
 
     setViewMode(mode) {
@@ -74,6 +128,11 @@ class PhotoCatalogApp {
         // Update gallery class
         const gallery = document.getElementById('galleryGrid');
         gallery.className = mode === 'grid' ? 'gallery-grid' : 'gallery-list';
+        
+        if (mode === 'grid') {
+            this.calculateGridDimensions();
+            this.updateGridLayout();
+        }
         
         this.renderGallery();
     }
@@ -93,7 +152,7 @@ class PhotoCatalogApp {
             }
 
             const options = {
-                limit: 25, // 5x5 grid
+                limit: this.gridDimensions.photosPerPage,
                 offset: reset ? 0 : this.currentOffset,
                 ...this.currentFilters
             };
@@ -331,16 +390,16 @@ class PhotoCatalogApp {
     async previousPage() {
         if (this.currentPage > 1) {
             this.currentPage--;
-            this.currentOffset = (this.currentPage - 1) * 25;
+            this.currentOffset = (this.currentPage - 1) * this.gridDimensions.photosPerPage;
             await this.loadPhotos(false);
         }
     }
 
     async nextPage() {
-        const maxPages = Math.ceil(this.totalPhotosInRange / 25);
+        const maxPages = Math.ceil(this.totalPhotosInRange / this.gridDimensions.photosPerPage);
         if (this.currentPage < maxPages) {
             this.currentPage++;
-            this.currentOffset = (this.currentPage - 1) * 25;
+            this.currentOffset = (this.currentPage - 1) * this.gridDimensions.photosPerPage;
             await this.loadPhotos(false);
         }
     }
@@ -378,12 +437,12 @@ class PhotoCatalogApp {
     }
 
     updatePaginationControls() {
-        const maxPages = Math.ceil(this.totalPhotosInRange / 25);
+        const maxPages = Math.ceil(this.totalPhotosInRange / this.gridDimensions.photosPerPage);
         
         // Update pagination buttons
         document.getElementById('prevPageBtn').disabled = this.currentPage === 1;
         document.getElementById('nextPageBtn').disabled = this.currentPage >= maxPages;
-        document.getElementById('pageInfo').textContent = `Page ${this.currentPage} of ${maxPages}`;
+        document.getElementById('pageInfo').textContent = `Page ${this.currentPage} of ${maxPages} (${this.gridDimensions.photosPerPage} per page)`;
     }
 
     showLoading(show) {

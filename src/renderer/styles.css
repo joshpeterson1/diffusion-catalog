@@ -175,9 +175,9 @@ body {
     padding: 20px;
     overflow-y: auto;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
+    gap: 50px;
     align-content: start;
+    justify-content: center;
     max-height: calc(100vh - 200px);
 }
 
@@ -197,8 +197,8 @@ body {
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s ease;
-    max-width: 200px;
-    max-height: 200px;
+    width: 100%;
+    height: auto;
 }
 
 .photo-item:hover {
