@@ -1,0 +1,352 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #404040;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-left h1 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.search-container {
+    display: flex;
+    gap: 8px;
+}
+
+.search-container input {
+    padding: 6px 12px;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    background-color: #3a3a3a;
+    color: #ffffff;
+    width: 300px;
+}
+
+.search-container button,
+.header-right button {
+    padding: 6px 12px;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    background-color: #4a4a4a;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.search-container button:hover,
+.header-right button:hover {
+    background-color: #5a5a5a;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.view-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.view-controls button.active {
+    background-color: #007acc;
+}
+
+.main-content {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+.sidebar {
+    width: 280px;
+    background-color: #252525;
+    border-right: 1px solid #404040;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #cccccc;
+}
+
+.sidebar h4 {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #aaaaaa;
+}
+
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #404040;
+    border-radius: 3px;
+    background-color: #3a3a3a;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.gallery-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #404040;
+}
+
+.photo-count {
+    font-size: 13px;
+    color: #cccccc;
+}
+
+.loading-indicator {
+    font-size: 13px;
+    color: #007acc;
+}
+
+.gallery-grid {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    align-content: start;
+}
+
+.photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.photo-item:hover {
+    transform: scale(1.02);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    padding: 12px;
+    color: white;
+    font-size: 12px;
+}
+
+.photo-overlay .filename {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.photo-overlay .metadata {
+    opacity: 0.8;
+}
+
+.favorite-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: #ffd700;
+    font-size: 16px;
+}
+
+.load-more-container {
+    padding: 20px;
+    text-align: center;
+}
+
+.load-more-container button {
+    padding: 10px 20px;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    background-color: #4a4a4a;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+}
+
+.modal-content {
+    position: relative;
+    margin: 2% auto;
+    width: 95%;
+    height: 95%;
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+.modal-body {
+    display: flex;
+    height: 100%;
+}
+
+.photo-viewer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a1a;
+}
+
+.photo-viewer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.photo-metadata {
+    width: 350px;
+    background-color: #2d2d2d;
+    padding: 20px;
+    overflow-y: auto;
+    border-left: 1px solid #404040;
+}
+
+.metadata-section {
+    margin-bottom: 25px;
+}
+
+.metadata-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #cccccc;
+    border-bottom: 1px solid #404040;
+    padding-bottom: 6px;
+}
+
+.metadata-section div {
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.metadata-section label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.metadata-section input,
+.metadata-section select,
+.metadata-section textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #404040;
+    border-radius: 3px;
+    background-color: #3a3a3a;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.metadata-section button {
+    padding: 8px 16px;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    background-color: #007acc;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.metadata-section button:hover {
+    background-color: #0086d9;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}

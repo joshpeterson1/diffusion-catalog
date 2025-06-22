@@ -1,0 +1,22 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+// Expose protected methods that allow the renderer process to use
+// the ipcRenderer without exposing the entire object
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Photo operations
+  getPhotos: (options) => ipcRenderer.invoke('get-photos', options),
+  searchPhotos: (query, filters) => ipcRenderer.invoke('search-photos', query, filters),
+  getPhotoMetadata: (imageId) => ipcRenderer.invoke('get-photo-metadata', imageId),
+  updateUserMetadata: (imageId, metadata) => ipcRenderer.invoke('update-user-metadata', imageId, metadata),
+  
+  // Directory watching
+  addWatchDirectory: (dirPath) => ipcRenderer.invoke('add-watch-directory', dirPath),
+  removeWatchDirectory: (dirPath) => ipcRenderer.invoke('remove-watch-directory', dirPath),
+  
+  // File operations
+  openDirectoryDialog: () => ipcRenderer.invoke('open-directory-dialog'),
+  
+  // Events
+  onPhotosUpdated: (callback) => ipcRenderer.on('photos-updated', callback),
+  removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
+});

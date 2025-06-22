@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photo Catalog</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-left">
+                <h1>AI Photo Catalog</h1>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Search photos, prompts, models..." />
+                    <button id="searchBtn">Search</button>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="addDirectoryBtn">Add Directory</button>
+                <div class="view-controls">
+                    <button id="gridViewBtn" class="active">Grid</button>
+                    <button id="listViewBtn">List</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="filters">
+                    <h3>Filters</h3>
+                    <div class="filter-group">
+                        <label>
+                            <input type="checkbox" id="favoritesFilter"> Favorites Only
+                        </label>
+                        <label>
+                            <input type="checkbox" id="nsfwFilter"> Include NSFW
+                        </label>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <h4>Date Range</h4>
+                        <input type="date" id="startDate" />
+                        <input type="date" id="endDate" />
+                    </div>
+                    
+                    <div class="filter-group">
+                        <h4>Sort By</h4>
+                        <select id="sortBy">
+                            <option value="date_taken">Date Taken</option>
+                            <option value="date_added">Date Added</option>
+                            <option value="filename">Filename</option>
+                        </select>
+                        <select id="sortOrder">
+                            <option value="DESC">Newest First</option>
+                            <option value="ASC">Oldest First</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="watch-directories">
+                    <h3>Watch Directories</h3>
+                    <div id="directoryList"></div>
+                </div>
+            </aside>
+
+            <main class="gallery-container">
+                <div class="gallery-header">
+                    <div class="photo-count">
+                        <span id="photoCount">0 photos</span>
+                    </div>
+                    <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+                        Loading...
+                    </div>
+                </div>
+                
+                <div class="gallery-grid" id="galleryGrid">
+                    <!-- Photos will be dynamically loaded here -->
+                </div>
+                
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" style="display: none;">Load More</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Photo viewer modal -->
+    <div id="photoModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="photo-viewer">
+                    <img id="modalImage" src="" alt="" />
+                </div>
+                <div class="photo-metadata">
+                    <div class="metadata-section">
+                        <h3>File Info</h3>
+                        <div id="fileInfo"></div>
+                    </div>
+                    <div class="metadata-section">
+                        <h3>AI Parameters</h3>
+                        <div id="aiInfo"></div>
+                    </div>
+                    <div class="metadata-section">
+                        <h3>User Notes</h3>
+                        <div id="userInfo">
+                            <label>
+                                <input type="checkbox" id="favoriteCheck"> Favorite
+                            </label>
+                            <label>
+                                <input type="checkbox" id="nsfwCheck"> NSFW
+                            </label>
+                            <div>
+                                <label>Custom Tags:</label>
+                                <input type="text" id="customTags" placeholder="tag1, tag2, tag3" />
+                            </div>
+                            <div>
+                                <label>Rating:</label>
+                                <select id="rating">
+                                    <option value="">No Rating</option>
+                                    <option value="1">1 Star</option>
+                                    <option value="2">2 Stars</option>
+                                    <option value="3">3 Stars</option>
+                                    <option value="4">4 Stars</option>
+                                    <option value="5">5 Stars</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Notes:</label>
+                                <textarea id="notes" rows="3"></textarea>
+                            </div>
+                            <button id="saveMetadata">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
