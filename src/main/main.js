@@ -212,7 +212,7 @@ class PhotoCatalogApp {
                 title: 'About AI Photo Catalog',
                 message: 'AI Photo Catalog',
                 detail: 'A powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.',
-                icon: path.join(__dirname, '..', '..', 'icon.ico')
+                icon: path.join(__dirname, '..', '..', 'icon.png')
               });
             }
           }
