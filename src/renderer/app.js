@@ -21,11 +21,33 @@ class PhotoCatalogApp {
     }
 
     initializeEventListeners() {
-        // Search functionality
-        document.getElementById('searchBtn').addEventListener('click', () => this.handleSearch());
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.handleSearch();
-        });
+        // Search functionality with more robust event binding
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
+        
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => this.handleSearch());
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSearch();
+            });
+            
+            // Add additional event listeners to ensure input stays interactive
+            searchInput.addEventListener('focus', () => {
+                searchInput.disabled = false;
+                searchInput.style.pointerEvents = 'auto';
+            });
+            
+            searchInput.addEventListener('blur', () => {
+                // Ensure it doesn't get disabled on blur
+                setTimeout(() => {
+                    searchInput.disabled = false;
+                    searchInput.style.pointerEvents = 'auto';
+                }, 10);
+            });
+        }
 
         // Menu event listeners
         window.electronAPI.onMenuAddDirectory(() => this.addDirectory());
@@ -784,17 +806,27 @@ class PhotoCatalogApp {
     showLoading(show) {
         document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
         
-        // Ensure search input remains enabled and focusable
+        // Always ensure search input remains enabled and focusable
         const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        
         if (searchInput) {
             searchInput.disabled = false;
-            // Re-enable interaction after loading
-            if (!show) {
-                setTimeout(() => {
-                    searchInput.disabled = false;
-                    searchInput.style.pointerEvents = 'auto';
-                }, 100);
-            }
+            searchInput.style.pointerEvents = 'auto';
+            searchInput.style.opacity = '1';
+            searchInput.removeAttribute('readonly');
+        }
+        
+        if (searchBtn) {
+            searchBtn.disabled = false;
+            searchBtn.style.pointerEvents = 'auto';
+        }
+        
+        // Additional restoration after loading completes
+        if (!show) {
+            setTimeout(() => {
+                this.restoreInputFocus();
+            }, 50);
         }
     }
 
@@ -949,7 +981,12 @@ class PhotoCatalogApp {
                 alert('Failed to rebuild database');
             } finally {
                 this.showLoading(false);
+                
+                // Multiple attempts to restore focus
                 this.restoreInputFocus();
+                setTimeout(() => this.restoreInputFocus(), 100);
+                setTimeout(() => this.restoreInputFocus(), 500);
+                setTimeout(() => this.restoreInputFocus(), 1000);
             }
         }
     }
@@ -1206,12 +1243,38 @@ class PhotoCatalogApp {
             searchInput.disabled = false;
             searchInput.style.pointerEvents = 'auto';
             searchInput.style.opacity = '1';
+            searchInput.removeAttribute('readonly');
+            searchInput.style.cursor = 'text';
+            
+            // Force a reflow to ensure the browser updates the element state
+            searchInput.offsetHeight;
+            
+            // Re-attach event listeners if they got lost
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+            
+            // Re-add event listeners
+            newSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSearch();
+            });
         }
         
         if (searchBtn) {
             searchBtn.disabled = false;
             searchBtn.style.pointerEvents = 'auto';
+            searchBtn.style.cursor = 'pointer';
+            
+            // Force a reflow
+            searchBtn.offsetHeight;
         }
+        
+        // Also restore any other interactive elements
+        const allButtons = document.querySelectorAll('button');
+        allButtons.forEach(btn => {
+            if (btn.id !== 'searchBtn') return;
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        });
     }
 
     formatFileSize(bytes) {
