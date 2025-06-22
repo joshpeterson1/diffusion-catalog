@@ -110,8 +110,8 @@ class MetadataExtractor {
       });
       
       console.log(`RAW EXIF RESULT:`, exifData ? Object.keys(exifData).length + ' fields found' : 'No EXIF data');
-      if (exifData && exifData.Parameters) {
-        console.log(`Parameters field found, length: ${exifData.Parameters.length}`);
+      if (exifData && exifData.parameters) {
+        console.log(`parameters field found, length: ${exifData.parameters.length}`);
       }
       
       return exifData || {};
@@ -165,7 +165,8 @@ class MetadataExtractor {
     
     // Check all possible EXIF fields that might contain AI metadata
     const textFields = [
-      exifData.Parameters,
+      exifData.parameters,  // lowercase - this is the correct field name
+      exifData.Parameters,  // uppercase - keep as fallback
       exifData.UserComment,
       exifData.ImageDescription,
       exifData.Software,

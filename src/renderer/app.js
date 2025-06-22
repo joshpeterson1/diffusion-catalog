@@ -358,9 +358,9 @@ class PhotoCatalogApp {
         
         let aiContent = '';
         
-        // Parse and show seed if available in Parameters
-        if (rawExifData.Parameters) {
-            const seedMatch = rawExifData.Parameters.match(/Seed:\s*(\d+)/i);
+        // Parse and show seed if available in parameters (lowercase)
+        if (rawExifData.parameters) {
+            const seedMatch = rawExifData.parameters.match(/Seed:\s*(\d+)/i);
             if (seedMatch) {
                 aiContent += '<div><strong>Seed:</strong></div>';
                 aiContent += `<div style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px;">${seedMatch[1]}</div>`;
@@ -368,10 +368,10 @@ class PhotoCatalogApp {
         }
         
         // Show Parameters if available
-        if (rawExifData.Parameters) {
+        if (rawExifData.parameters) {
             aiContent += '<div><strong>Parameters:</strong></div>';
             aiContent += '<div style="max-height: 300px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin-bottom: 15px;">';
-            aiContent += rawExifData.Parameters;
+            aiContent += rawExifData.parameters;
             aiContent += '</div>';
         }
         
