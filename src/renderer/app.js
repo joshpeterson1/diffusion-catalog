@@ -10,6 +10,8 @@ class PhotoCatalogApp {
         this.favoritesOnly = false;
         this.totalPhotosInRange = 0;
         this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25 };
+        this.currentPhotoIndex = -1;
+        this.includeNsfw = false;
         
         this.initializeEventListeners();
         this.setDefaultDateRange();
@@ -35,7 +37,7 @@ class PhotoCatalogApp {
 
         // Filters
         document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
-        document.getElementById('nsfwFilter').addEventListener('change', () => this.refreshPhotos());
+        document.getElementById('nsfwFilter').addEventListener('change', () => this.toggleNsfw());
         document.getElementById('startDate').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('endDate').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
@@ -50,6 +52,8 @@ class PhotoCatalogApp {
         document.getElementById('photoModal').addEventListener('click', (e) => {
             if (e.target.id === 'photoModal') this.closeModal();
         });
+        document.getElementById('prevImageBtn').addEventListener('click', () => this.showPreviousImage());
+        document.getElementById('nextImageBtn').addEventListener('click', () => this.showNextImage());
 
         // Metadata saving
         document.getElementById('saveMetadata').addEventListener('click', () => this.savePhotoMetadata());
@@ -57,6 +61,8 @@ class PhotoCatalogApp {
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.closeModal();
+            if (e.key === 'ArrowLeft') this.showPreviousImage();
+            if (e.key === 'ArrowRight') this.showNextImage();
         });
 
         // Window resize handler
@@ -261,6 +267,7 @@ class PhotoCatalogApp {
 
     async openPhotoModal(photo) {
         this.currentPhoto = photo;
+        this.currentPhotoIndex = this.photos.findIndex(p => p.id === photo.id);
         
         // Load full metadata
         const fullMetadata = await window.electronAPI.getPhotoMetadata(photo.id);
@@ -271,6 +278,9 @@ class PhotoCatalogApp {
         
         // Populate metadata
         this.populateMetadata(fullMetadata);
+        
+        // Update navigation buttons
+        this.updateNavigationButtons();
         
         // Show modal
         document.getElementById('photoModal').style.display = 'block';
@@ -347,9 +357,34 @@ class PhotoCatalogApp {
         }
     }
 
+    showPreviousImage() {
+        if (this.currentPhotoIndex > 0) {
+            this.currentPhotoIndex--;
+            const prevPhoto = this.photos[this.currentPhotoIndex];
+            this.openPhotoModal(prevPhoto);
+        }
+    }
+
+    showNextImage() {
+        if (this.currentPhotoIndex < this.photos.length - 1) {
+            this.currentPhotoIndex++;
+            const nextPhoto = this.photos[this.currentPhotoIndex];
+            this.openPhotoModal(nextPhoto);
+        }
+    }
+
+    updateNavigationButtons() {
+        const prevBtn = document.getElementById('prevImageBtn');
+        const nextBtn = document.getElementById('nextImageBtn');
+        
+        prevBtn.disabled = this.currentPhotoIndex <= 0;
+        nextBtn.disabled = this.currentPhotoIndex >= this.photos.length - 1;
+    }
+
     closeModal() {
         document.getElementById('photoModal').style.display = 'none';
         this.currentPhoto = null;
+        this.currentPhotoIndex = -1;
     }
 
     async handleSearch() {
@@ -404,6 +439,14 @@ class PhotoCatalogApp {
             console.log('ADDING FAVORITES FILTER TO QUERY');
         } else {
             console.log('NOT ADDING FAVORITES FILTER - SHOULD SHOW ALL PHOTOS');
+        }
+
+        // Add NSFW filter - exclude NSFW unless explicitly included
+        if (!this.includeNsfw) {
+            filters.excludeNsfw = true;
+            console.log('EXCLUDING NSFW CONTENT');
+        } else {
+            console.log('INCLUDING NSFW CONTENT');
         }
 
         this.currentFilters = filters;

@@ -163,6 +163,17 @@ class DatabaseManager {
       params.push(endDate);
       console.log('Added endDate filter:', endDate);
     }
+
+    if (options.excludeNsfw) {
+      if (isFavorite === true) {
+        // For favorites query, add NSFW exclusion to existing WHERE clause
+        query += ' AND (u.is_nsfw IS NULL OR u.is_nsfw = 0)';
+      } else {
+        // For all photos query, exclude NSFW
+        query += ' AND (u.is_nsfw IS NULL OR u.is_nsfw = 0)';
+      }
+      console.log('Added NSFW exclusion filter');
+    }
     
     query += ` ORDER BY i.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
     params.push(limit, offset);
