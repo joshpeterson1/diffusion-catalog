@@ -108,6 +108,8 @@ class DatabaseManager {
   }
 
   async getPhotos(options = {}) {
+    console.log('DATABASE getPhotos called with options:', JSON.stringify(options, null, 2));
+    
     const {
       limit = 200,
       offset = 0,
@@ -118,9 +120,12 @@ class DatabaseManager {
       isFavorite
     } = options;
 
+    console.log('isFavorite value:', isFavorite, 'type:', typeof isFavorite);
+
     let query, params = [];
 
     if (isFavorite === true) {
+      console.log('BUILDING FAVORITES QUERY WITH INNER JOIN');
       // When filtering for favorites, use INNER JOIN
       query = `
         SELECT i.*, 
@@ -133,6 +138,7 @@ class DatabaseManager {
         WHERE u.is_favorite = 1
       `;
     } else {
+      console.log('BUILDING ALL PHOTOS QUERY WITH LEFT JOIN');
       // When not filtering for favorites, use LEFT JOIN
       query = `
         SELECT i.*, 
@@ -149,24 +155,34 @@ class DatabaseManager {
     if (startDate) {
       query += ' AND i.date_taken >= ?';
       params.push(startDate);
+      console.log('Added startDate filter:', startDate);
     }
     
     if (endDate) {
       query += ' AND i.date_taken <= ?';
       params.push(endDate);
+      console.log('Added endDate filter:', endDate);
     }
     
     query += ` ORDER BY i.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
     params.push(limit, offset);
     
+    console.log('FINAL QUERY:', query);
+    console.log('FINAL PARAMS:', JSON.stringify(params));
+    
     const stmt = this.db.prepare(query);
     const results = stmt.all(...params);
     
-    console.log(`Query: ${query}`);
-    console.log(`Params: ${JSON.stringify(params)}`);
-    console.log(`Results: ${results.length} rows`);
+    console.log(`QUERY RESULTS: ${results.length} rows returned`);
     if (results.length > 0) {
-      console.log('First result:', results[0]);
+      console.log('First result sample:', {
+        id: results[0].id,
+        filename: results[0].filename,
+        is_favorite: results[0].is_favorite,
+        is_nsfw: results[0].is_nsfw
+      });
+    } else {
+      console.log('NO RESULTS RETURNED FROM QUERY');
     }
     
     return results;

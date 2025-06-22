@@ -157,9 +157,9 @@ class PhotoCatalogApp {
                 ...this.currentFilters
             };
 
-            console.log('Loading photos with options:', options);
+            console.log('LOADPHOTOS: Sending options to backend:', JSON.stringify(options, null, 2));
             const photos = await window.electronAPI.getPhotos(options);
-            console.log('Received photos:', photos.length);
+            console.log('LOADPHOTOS: Received photos from backend:', photos.length);
             
             this.photos = photos;
             
@@ -167,10 +167,12 @@ class PhotoCatalogApp {
             const countOptions = { ...this.currentFilters };
             delete countOptions.limit;
             delete countOptions.offset;
+            console.log('LOADPHOTOS: Getting total count with options:', JSON.stringify(countOptions, null, 2));
             const allPhotos = await window.electronAPI.getPhotos({ ...countOptions, limit: 999999, offset: 0 });
             this.totalPhotosInRange = allPhotos.length;
             
-            console.log('Total photos in range:', this.totalPhotosInRange);
+            console.log('LOADPHOTOS: Total photos in range:', this.totalPhotosInRange);
+            console.log('LOADPHOTOS: Current photos array length:', this.photos.length);
 
             this.renderGallery();
             this.updatePhotoCount();
@@ -375,6 +377,7 @@ class PhotoCatalogApp {
         this.favoritesOnly = !this.favoritesOnly;
         const button = document.getElementById('favoritesFilter');
         button.classList.toggle('active', this.favoritesOnly);
+        console.log('TOGGLE FAVORITES:', this.favoritesOnly);
         this.refreshPhotos();
     }
 
@@ -398,10 +401,13 @@ class PhotoCatalogApp {
         // Add favorites filter only if enabled
         if (this.favoritesOnly) {
             filters.isFavorite = true;
+            console.log('ADDING FAVORITES FILTER TO QUERY');
+        } else {
+            console.log('NOT ADDING FAVORITES FILTER - SHOULD SHOW ALL PHOTOS');
         }
 
         this.currentFilters = filters;
-        console.log('Refreshing with filters:', this.currentFilters);
+        console.log('FINAL FILTERS BEING SENT:', JSON.stringify(this.currentFilters, null, 2));
         this.loadPhotos(true);
     }
 
