@@ -79,7 +79,7 @@ class FileWatcher {
         path: filePath,
         filename: filename,
         fileSize: stats.size,
-        dateTaken: stats.mtime, // Will be updated with EXIF data if available
+        dateTaken: stats.mtime.toISOString(), // Convert Date to ISO string
         width: null,
         height: null,
         hash: null
