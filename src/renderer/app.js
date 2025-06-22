@@ -358,12 +358,6 @@ class PhotoCatalogApp {
         
         let aiContent = '';
         
-        // Show EXIF dimensions if available
-        if (rawExifData.ImageWidth && rawExifData.ImageHeight) {
-            aiContent += '<div><strong>EXIF Dimensions:</strong></div>';
-            aiContent += `<div>${rawExifData.ImageWidth} × ${rawExifData.ImageHeight}</div><br>`;
-        }
-        
         // Parse and show seed if available in Parameters
         let seedValue = null;
         if (rawExifData.Parameters) {
@@ -371,16 +365,16 @@ class PhotoCatalogApp {
             if (seedMatch) {
                 seedValue = seedMatch[1];
                 aiContent += '<div><strong>Seed:</strong></div>';
-                aiContent += `<div>${seedValue}</div><br>`;
+                aiContent += `<div style="margin-bottom: 15px;">${seedValue}</div>`;
             }
         }
         
         // Show Parameters if available
         if (rawExifData.Parameters) {
             aiContent += '<div><strong>Parameters:</strong></div>';
-            aiContent += '<div style="max-height: 200px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word;">';
+            aiContent += '<div style="max-height: 200px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin-bottom: 15px;">';
             aiContent += rawExifData.Parameters;
-            aiContent += '</div><br>';
+            aiContent += '</div>';
         }
         
         // First show any parsed AI metadata we have
