@@ -57,6 +57,10 @@ class PhotoCatalogApp {
         // Metadata saving
         document.getElementById('saveMetadata').addEventListener('click', () => this.savePhotoMetadata());
         document.getElementById('openInDirectory').addEventListener('click', () => this.openInDirectory());
+        
+        // Filter toggle buttons in modal
+        document.getElementById('favoriteToggle').addEventListener('click', () => this.toggleModalFavorite());
+        document.getElementById('nsfwToggle').addEventListener('click', () => this.toggleModalNsfw());
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -513,9 +517,13 @@ class PhotoCatalogApp {
             otherInfo.innerHTML = '<div>No additional metadata available</div>';
         }
 
-        // User metadata
-        document.getElementById('favoriteCheck').checked = metadata.is_favorite || false;
-        document.getElementById('nsfwCheck').checked = metadata.is_nsfw || false;
+        // User metadata - update button states
+        const favoriteBtn = document.getElementById('favoriteToggle');
+        const nsfwBtn = document.getElementById('nsfwToggle');
+        
+        favoriteBtn.classList.toggle('active', metadata.is_favorite || false);
+        nsfwBtn.classList.toggle('active', metadata.is_nsfw || false);
+        
         document.getElementById('customTags').value = metadata.custom_tags || '';
         document.getElementById('rating').value = metadata.rating || '';
         document.getElementById('notes').value = metadata.notes || '';
@@ -536,8 +544,8 @@ class PhotoCatalogApp {
         }
 
         const metadata = {
-            isFavorite: document.getElementById('favoriteCheck').checked,
-            isNsfw: document.getElementById('nsfwCheck').checked,
+            isFavorite: document.getElementById('favoriteToggle').classList.contains('active'),
+            isNsfw: document.getElementById('nsfwToggle').classList.contains('active'),
             customTags: customTags || null,
             rating: rating || null,
             notes: notes || null
@@ -923,6 +931,16 @@ class PhotoCatalogApp {
                 }
             });
         });
+    }
+
+    toggleModalFavorite() {
+        const button = document.getElementById('favoriteToggle');
+        button.classList.toggle('active');
+    }
+
+    toggleModalNsfw() {
+        const button = document.getElementById('nsfwToggle');
+        button.classList.toggle('active');
     }
 
     formatFileSize(bytes) {
