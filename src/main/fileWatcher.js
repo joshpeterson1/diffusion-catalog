@@ -1,6 +1,8 @@
 const chokidar = require('chokidar');
 const path = require('path');
 const fs = require('fs').promises;
+const yauzl = require('yauzl');
+const { promisify } = require('util');
 
 class FileWatcher {
   constructor(database, metadataExtractor) {
@@ -8,6 +10,7 @@ class FileWatcher {
     this.metadataExtractor = metadataExtractor;
     this.watchers = new Map();
     this.supportedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.bmp']);
+    this.supportedArchives = new Set(['.zip']);
   }
 
   async addDirectory(dirPath) {
@@ -60,10 +63,15 @@ class FileWatcher {
 
   async handleFileAdded(filePath) {
     const ext = path.extname(filePath).toLowerCase();
-    if (!this.supportedExtensions.has(ext)) {
-      return;
+    
+    if (this.supportedExtensions.has(ext)) {
+      await this.handleImageFile(filePath);
+    } else if (this.supportedArchives.has(ext)) {
+      await this.handleArchiveFile(filePath);
     }
+  }
 
+  async handleImageFile(filePath) {
     try {
       const stats = await fs.stat(filePath);
       const filename = path.basename(filePath);
@@ -82,7 +90,8 @@ class FileWatcher {
         dateTaken: stats.mtime.toISOString(), // Convert Date to ISO string
         width: null,
         height: null,
-        hash: null
+        hash: null,
+        isArchive: false
       };
 
       const imageId = await this.database.addImage(imageData);
@@ -91,8 +100,76 @@ class FileWatcher {
       this.metadataExtractor.queueImage(imageId, filePath);
       
     } catch (error) {
-      console.error('Error handling file added:', error);
+      console.error('Error handling image file:', error);
     }
+  }
+
+  async handleArchiveFile(filePath) {
+    try {
+      console.log(`Processing ZIP archive: ${filePath}`);
+      const images = await this.extractImageListFromZip(filePath);
+      
+      for (const imageInfo of images) {
+        const archiveImagePath = `${filePath}::${imageInfo.entryName}`;
+        
+        // Check if this archive entry already exists
+        const existing = this.database.db.prepare('SELECT id FROM images WHERE path = ?').get(archiveImagePath);
+        if (existing) {
+          continue;
+        }
+
+        const imageId = await this.database.addImage({
+          path: archiveImagePath,
+          filename: imageInfo.filename,
+          fileSize: imageInfo.uncompressedSize,
+          dateTaken: null,
+          width: null,
+          height: null,
+          hash: null,
+          isArchive: true,
+          archivePath: filePath
+        });
+
+        // Queue for metadata extraction
+        this.metadataExtractor.queueImage(imageId, archiveImagePath);
+      }
+      
+      console.log(`Found ${images.length} images in ZIP: ${path.basename(filePath)}`);
+    } catch (error) {
+      console.error('Error handling archive file:', error);
+    }
+  }
+
+  async extractImageListFromZip(zipPath) {
+    return new Promise((resolve, reject) => {
+      const images = [];
+      
+      yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) return reject(err);
+        
+        zipfile.readEntry();
+        
+        zipfile.on('entry', (entry) => {
+          const entryExt = path.extname(entry.fileName).toLowerCase();
+          
+          if (this.supportedExtensions.has(entryExt) && !entry.fileName.endsWith('/')) {
+            images.push({
+              entryName: entry.fileName,
+              filename: path.basename(entry.fileName),
+              uncompressedSize: entry.uncompressedSize
+            });
+          }
+          
+          zipfile.readEntry();
+        });
+        
+        zipfile.on('end', () => {
+          resolve(images);
+        });
+        
+        zipfile.on('error', reject);
+      });
+    });
   }
 
   async handleFileRemoved(filePath) {
