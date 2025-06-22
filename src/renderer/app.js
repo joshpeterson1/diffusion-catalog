@@ -38,12 +38,9 @@ class PhotoCatalogApp {
 
         // Filters
         document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
-        document.getElementById('nsfwFilter').addEventListener('change', () => this.toggleNsfw());
+        document.getElementById('nsfwFilter').addEventListener('click', () => this.toggleNsfw());
         document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('sortOrder').addEventListener('change', () => this.refreshPhotos());
-        
-        // Initialize NSFW filter state from checkbox
-        this.includeNsfw = document.getElementById('nsfwFilter').checked;
 
         // Pagination
         document.getElementById('prevPageBtn').addEventListener('click', () => this.previousPage());
@@ -518,7 +515,9 @@ class PhotoCatalogApp {
     }
 
     toggleNsfw() {
-        this.includeNsfw = document.getElementById('nsfwFilter').checked;
+        this.includeNsfw = !this.includeNsfw;
+        const button = document.getElementById('nsfwFilter');
+        button.classList.toggle('active', this.includeNsfw);
         console.log('TOGGLE NSFW:', this.includeNsfw);
         this.refreshPhotos();
     }
