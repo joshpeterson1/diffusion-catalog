@@ -56,6 +56,7 @@ class PhotoCatalogApp {
 
         // Metadata saving
         document.getElementById('saveMetadata').addEventListener('click', () => this.savePhotoMetadata());
+        document.getElementById('openInDirectory').addEventListener('click', () => this.openInDirectory());
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -352,11 +353,37 @@ class PhotoCatalogApp {
             <div><strong>Path:</strong> ${metadata.path}</div>
         `;
 
-        // AI info - show raw EXIF data for debugging
+        // AI info - show specific EXIF data
         const aiInfo = document.getElementById('aiInfo');
         
-        // First show any parsed AI metadata we have
         let aiContent = '';
+        
+        // Show EXIF dimensions if available
+        if (rawExifData.ImageWidth && rawExifData.ImageHeight) {
+            aiContent += '<div><strong>EXIF Dimensions:</strong></div>';
+            aiContent += `<div>${rawExifData.ImageWidth} × ${rawExifData.ImageHeight}</div><br>`;
+        }
+        
+        // Parse and show seed if available in Parameters
+        let seedValue = null;
+        if (rawExifData.Parameters) {
+            const seedMatch = rawExifData.Parameters.match(/Seed:\s*(\d+)/i);
+            if (seedMatch) {
+                seedValue = seedMatch[1];
+                aiContent += '<div><strong>Seed:</strong></div>';
+                aiContent += `<div>${seedValue}</div><br>`;
+            }
+        }
+        
+        // Show Parameters if available
+        if (rawExifData.Parameters) {
+            aiContent += '<div><strong>Parameters:</strong></div>';
+            aiContent += '<div style="max-height: 200px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word;">';
+            aiContent += rawExifData.Parameters;
+            aiContent += '</div><br>';
+        }
+        
+        // First show any parsed AI metadata we have
         if (metadata.prompt || metadata.model || metadata.steps || metadata.seed) {
             aiContent += '<div><strong>Parsed AI Metadata:</strong></div>';
             aiContent += `${metadata.prompt ? `<div><strong>Prompt:</strong> ${metadata.prompt}</div>` : ''}`;
@@ -371,12 +398,14 @@ class PhotoCatalogApp {
             aiContent += '<br>';
         }
         
-        // Show raw EXIF data
-        aiContent += '<div><strong>Raw EXIF Data:</strong></div>';
+        // Show raw EXIF data (collapsed by default)
         if (Object.keys(rawExifData).length > 0) {
-            aiContent += '<div style="max-height: 300px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap;">';
+            aiContent += '<details style="margin-top: 10px;">';
+            aiContent += '<summary style="cursor: pointer; font-weight: bold;">Raw EXIF Data</summary>';
+            aiContent += '<div style="max-height: 300px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; margin-top: 5px;">';
             aiContent += JSON.stringify(rawExifData, null, 2);
             aiContent += '</div>';
+            aiContent += '</details>';
         } else {
             aiContent += '<div>No EXIF data found</div>';
         }
@@ -473,6 +502,17 @@ class PhotoCatalogApp {
             const saveBtn = document.getElementById('saveMetadata');
             saveBtn.textContent = 'Save';
             saveBtn.disabled = false;
+        }
+    }
+
+    async openInDirectory() {
+        if (!this.currentPhoto) return;
+        
+        try {
+            await window.electronAPI.openInDirectory(this.currentPhoto.path);
+        } catch (error) {
+            console.error('Error opening in directory:', error);
+            alert('Failed to open directory');
         }
     }
 

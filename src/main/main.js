@@ -108,6 +108,12 @@ class PhotoCatalogApp {
     ipcMain.handle('get-raw-exif-data', async (event, filePath) => {
       return await this.metadataExtractor.extractRawExifData(filePath);
     });
+
+    // Open in directory handler
+    ipcMain.handle('open-in-directory', async (event, filePath) => {
+      const { shell } = require('electron');
+      shell.showItemInFolder(filePath);
+    });
   }
 }
 

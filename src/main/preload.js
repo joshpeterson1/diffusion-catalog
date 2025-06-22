@@ -28,5 +28,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSubfolders: () => ipcRenderer.invoke('get-subfolders'),
   
   // EXIF operations
-  getRawExifData: (filePath) => ipcRenderer.invoke('get-raw-exif-data', filePath)
+  getRawExifData: (filePath) => ipcRenderer.invoke('get-raw-exif-data', filePath),
+  
+  // File operations
+  openInDirectory: (filePath) => ipcRenderer.invoke('open-in-directory', filePath)
 });
