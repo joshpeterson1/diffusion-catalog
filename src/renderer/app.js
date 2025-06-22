@@ -16,12 +16,8 @@ class PhotoCatalogApp {
         
         this.initializeEventListeners();
         
-        // Delay initial load to ensure DOM is ready
-        setTimeout(() => {
-            this.calculateGridDimensions();
-            this.loadSubfolders();
-            this.loadPhotos();
-        }, 100);
+        // More robust initialization to handle DOM readiness
+        this.initializeApp();
     }
 
     initializeEventListeners() {
@@ -138,15 +134,54 @@ class PhotoCatalogApp {
     calculateGridDimensions() {
         const gallery = document.getElementById('galleryGrid');
         if (!gallery) {
-            // Fallback dimensions if gallery not ready
+            console.log('Gallery element not found, using fallback dimensions');
             this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 50 };
             return;
         }
 
-        const galleryRect = gallery.getBoundingClientRect();
+        // Force layout calculation
+        gallery.offsetHeight;
         
-        // If gallery has no dimensions yet, use fallback
+        const galleryRect = gallery.getBoundingClientRect();
+        console.log('Gallery rect:', galleryRect);
+        
+        // If gallery has no dimensions yet, try to get parent dimensions or use fallback
         if (galleryRect.width === 0 || galleryRect.height === 0) {
+            console.log('Gallery has no dimensions, checking parent...');
+            const parent = gallery.parentElement;
+            if (parent) {
+                const parentRect = parent.getBoundingClientRect();
+                console.log('Parent rect:', parentRect);
+                if (parentRect.width > 0 && parentRect.height > 0) {
+                    // Use parent dimensions minus some padding
+                    const availableWidth = parentRect.width - 80;
+                    const availableHeight = parentRect.height - 120;
+                    
+                    const spacing = 50;
+                    const minImageSize = 120;
+                    
+                    const maxCols = Math.floor((availableWidth + spacing) / (minImageSize + spacing));
+                    const maxRows = Math.floor((availableHeight + spacing) / (minImageSize + spacing));
+                    
+                    const cols = Math.max(2, Math.min(maxCols, 12));
+                    const rows = Math.max(2, Math.min(maxRows, 8));
+                    
+                    const imageSize = Math.floor((availableWidth - (cols - 1) * spacing) / cols);
+                    
+                    this.gridDimensions = {
+                        cols: cols,
+                        rows: rows,
+                        photosPerPage: cols * rows,
+                        imageSize: imageSize,
+                        spacing: spacing
+                    };
+                    
+                    console.log(`Grid dimensions from parent: ${cols}x${rows} = ${this.gridDimensions.photosPerPage} photos per page`);
+                    return;
+                }
+            }
+            
+            console.log('Using fallback dimensions');
             this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 50 };
             return;
         }
@@ -828,6 +863,31 @@ class PhotoCatalogApp {
         }
         
         return result;
+    }
+
+    async initializeApp() {
+        // Wait for DOM to be fully ready
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
+        
+        // Additional delay to ensure layout is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Force a layout calculation
+        const gallery = document.getElementById('galleryGrid');
+        if (gallery) {
+            gallery.offsetHeight; // Force layout
+        }
+        
+        this.calculateGridDimensions();
+        this.updateGridLayout();
+        
+        // Load data
+        await this.loadSubfolders();
+        await this.loadPhotos();
     }
 
     formatFileSize(bytes) {
