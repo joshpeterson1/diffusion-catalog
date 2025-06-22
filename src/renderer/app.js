@@ -474,27 +474,6 @@ class PhotoCatalogApp {
         // Add click-to-copy functionality
         this.addClickToCopyListeners();
 
-        // Other metadata (EXIF, camera info, etc.)
-        const otherInfo = document.getElementById('otherInfo');
-        const otherFields = [];
-        
-        // Add any other interesting metadata fields
-        if (metadata.width && metadata.height) {
-            otherFields.push(`<div><strong>Original Dimensions:</strong> ${metadata.width} × ${metadata.height}</div>`);
-        }
-        if (metadata.date_added) {
-            otherFields.push(`<div><strong>Date Added:</strong> ${new Date(metadata.date_added).toLocaleString()}</div>`);
-        }
-        if (metadata.hash) {
-            otherFields.push(`<div><strong>File Hash:</strong> ${metadata.hash}</div>`);
-        }
-        
-        if (otherFields.length > 0) {
-            otherInfo.innerHTML = otherFields.join('');
-        } else {
-            otherInfo.innerHTML = '<div>No additional metadata available</div>';
-        }
-
         // User metadata - update button states and text
         const favoriteBtn = document.getElementById('favoriteToggle');
         const nsfwBtn = document.getElementById('nsfwToggle');
