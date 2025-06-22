@@ -455,28 +455,6 @@ class PhotoCatalogApp {
                 aiContent += '</div>';
             }
             
-            // Show raw parameters as fallback/debug
-            aiContent += '<details style="margin-bottom: 15px;">';
-            aiContent += '<summary style="cursor: pointer; font-weight: bold; font-size: 12px;">Raw Parameters</summary>';
-            aiContent += '<div style="max-height: 200px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin-top: 5px;">';
-            aiContent += rawExifData.parameters;
-            aiContent += '</div>';
-            aiContent += '</details>';
-        }
-        
-        // First show any parsed AI metadata we have
-        if (metadata.prompt || metadata.model || metadata.steps || metadata.seed) {
-            aiContent += '<div><strong>Parsed AI Metadata:</strong></div>';
-            aiContent += `${metadata.prompt ? `<div><strong>Prompt:</strong> ${metadata.prompt}</div>` : ''}`;
-            aiContent += `${metadata.negative_prompt ? `<div><strong>Negative Prompt:</strong> ${metadata.negative_prompt}</div>` : ''}`;
-            aiContent += `${metadata.model ? `<div><strong>Model:</strong> ${metadata.model}</div>` : ''}`;
-            aiContent += `${metadata.steps ? `<div><strong>Steps:</strong> ${metadata.steps}</div>` : ''}`;
-            aiContent += `${metadata.cfg_scale ? `<div><strong>CFG Scale:</strong> ${metadata.cfg_scale}</div>` : ''}`;
-            aiContent += `${metadata.seed ? `<div><strong>Seed:</strong> ${metadata.seed}</div>` : ''}`;
-            aiContent += `${metadata.sampler ? `<div><strong>Sampler:</strong> ${metadata.sampler}</div>` : ''}`;
-            aiContent += `${metadata.scheduler ? `<div><strong>Scheduler:</strong> ${metadata.scheduler}</div>` : ''}`;
-            aiContent += `${metadata.size ? `<div><strong>Generation Size:</strong> ${metadata.size}</div>` : ''}`;
-            aiContent += '<br>';
         }
         
         // Show raw EXIF data (collapsed by default)
