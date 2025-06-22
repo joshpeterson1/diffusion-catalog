@@ -240,20 +240,54 @@ class DatabaseManager {
         throw new Error('Rating must be between 1 and 5');
       }
 
-      const stmt = this.db.prepare(`
-        INSERT OR REPLACE INTO user_metadata 
-        (image_id, is_favorite, is_nsfw, custom_tags, rating, notes)
-        VALUES (?, ?, ?, ?, ?, ?)
+      // First, ensure a record exists
+      const insertStmt = this.db.prepare(`
+        INSERT OR IGNORE INTO user_metadata (image_id) VALUES (?)
       `);
-      
-      return stmt.run(
-        imageId,
-        metadata.isFavorite ? 1 : 0,  // Convert boolean to integer
-        metadata.isNsfw ? 1 : 0,      // Convert boolean to integer
-        metadata.customTags || null,
-        metadata.rating || null,
-        metadata.notes || null
-      );
+      insertStmt.run(imageId);
+
+      // Build dynamic UPDATE query to only update provided fields
+      const updateFields = [];
+      const updateValues = [];
+
+      if (metadata.hasOwnProperty('isFavorite')) {
+        updateFields.push('is_favorite = ?');
+        updateValues.push(metadata.isFavorite ? 1 : 0);
+      }
+
+      if (metadata.hasOwnProperty('isNsfw')) {
+        updateFields.push('is_nsfw = ?');
+        updateValues.push(metadata.isNsfw ? 1 : 0);
+      }
+
+      if (metadata.hasOwnProperty('customTags')) {
+        updateFields.push('custom_tags = ?');
+        updateValues.push(metadata.customTags || null);
+      }
+
+      if (metadata.hasOwnProperty('rating')) {
+        updateFields.push('rating = ?');
+        updateValues.push(metadata.rating || null);
+      }
+
+      if (metadata.hasOwnProperty('notes')) {
+        updateFields.push('notes = ?');
+        updateValues.push(metadata.notes || null);
+      }
+
+      if (updateFields.length > 0) {
+        const updateQuery = `
+          UPDATE user_metadata 
+          SET ${updateFields.join(', ')}
+          WHERE image_id = ?
+        `;
+        updateValues.push(imageId);
+
+        const updateStmt = this.db.prepare(updateQuery);
+        return updateStmt.run(...updateValues);
+      }
+
+      return { changes: 0 };
     } catch (error) {
       console.error('Error updating user metadata:', error);
       throw error;
