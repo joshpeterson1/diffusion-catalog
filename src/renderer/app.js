@@ -6,6 +6,8 @@ class PhotoCatalogApp {
         this.currentPhoto = null;
         this.isLoading = false;
         this.viewMode = 'grid'; // 'grid' or 'list'
+        this.currentPage = 1;
+        this.favoritesOnly = false;
         
         this.initializeEventListeners();
         this.setDefaultDateRange();
@@ -27,14 +29,16 @@ class PhotoCatalogApp {
         document.getElementById('listViewBtn').addEventListener('click', () => this.setViewMode('list'));
 
         // Filters
-        document.getElementById('favoritesFilter').addEventListener('change', () => this.applyFilters());
+        document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
         document.getElementById('nsfwFilter').addEventListener('change', () => this.applyFilters());
         document.getElementById('startDate').addEventListener('change', () => this.applyFilters());
         document.getElementById('endDate').addEventListener('change', () => this.applyFilters());
         document.getElementById('sortBy').addEventListener('change', () => this.applyFilters());
         document.getElementById('sortOrder').addEventListener('change', () => this.applyFilters());
 
-        // Load more
+        // Pagination and load more
+        document.getElementById('prevPageBtn').addEventListener('click', () => this.previousPage());
+        document.getElementById('nextPageBtn').addEventListener('click', () => this.nextPage());
         document.getElementById('loadMoreBtn').addEventListener('click', () => this.loadMorePhotos());
 
         // Modal controls
@@ -93,6 +97,7 @@ class PhotoCatalogApp {
             if (reset) {
                 this.photos = photos;
                 this.currentOffset = photos.length;
+                this.currentPage = 1;
                 this.renderGallery();
             } else {
                 this.photos.push(...photos);
@@ -101,7 +106,7 @@ class PhotoCatalogApp {
             }
 
             this.updatePhotoCount();
-            this.updateLoadMoreButton(photos.length === 25);
+            this.updatePaginationControls(photos.length === 25);
 
         } catch (error) {
             console.error('Error loading photos:', error);
@@ -282,7 +287,7 @@ class PhotoCatalogApp {
                 this.photos = results;
                 this.renderGallery();
                 this.updatePhotoCount();
-                this.updateLoadMoreButton(false);
+                this.updatePaginationControls(false);
             } catch (error) {
                 console.error('Error searching photos:', error);
             } finally {
@@ -291,6 +296,13 @@ class PhotoCatalogApp {
         } else {
             this.applyFilters();
         }
+    }
+
+    toggleFavorites() {
+        this.favoritesOnly = !this.favoritesOnly;
+        const button = document.getElementById('favoritesFilter');
+        button.classList.toggle('active', this.favoritesOnly);
+        this.applyFilters();
     }
 
     applyFilters() {
@@ -305,11 +317,27 @@ class PhotoCatalogApp {
         if (startDate) this.currentFilters.startDate = startDate;
         if (endDate) this.currentFilters.endDate = endDate;
         
-        if (document.getElementById('favoritesFilter').checked) {
+        if (this.favoritesOnly) {
             this.currentFilters.isFavorite = true;
+        } else {
+            delete this.currentFilters.isFavorite;
         }
 
         this.loadPhotos(true);
+    }
+
+    async previousPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.currentOffset = (this.currentPage - 1) * 25;
+            await this.loadPhotos(true);
+        }
+    }
+
+    async nextPage() {
+        this.currentPage++;
+        this.currentOffset = (this.currentPage - 1) * 25;
+        await this.loadPhotos(true);
     }
 
     async addDirectory() {
@@ -338,8 +366,14 @@ class PhotoCatalogApp {
         document.getElementById('photoCount').textContent = `${this.photos.length} photos`;
     }
 
-    updateLoadMoreButton(show) {
-        document.getElementById('loadMoreBtn').style.display = show ? 'block' : 'none';
+    updatePaginationControls(hasMore) {
+        // Update pagination buttons
+        document.getElementById('prevPageBtn').disabled = this.currentPage === 1;
+        document.getElementById('nextPageBtn').disabled = !hasMore;
+        document.getElementById('pageInfo').textContent = `Page ${this.currentPage}`;
+        
+        // Show/hide load more button
+        document.getElementById('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
     }
 
     showLoading(show) {
