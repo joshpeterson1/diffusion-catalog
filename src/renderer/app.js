@@ -321,12 +321,20 @@ class PhotoCatalogApp {
         try {
             await window.electronAPI.updateUserMetadata(this.currentPhoto.id, metadata);
             
-            // Update the photo in our local array
+            // Update the photo in our local array with the correct field names
             const photoIndex = this.photos.findIndex(p => p.id === this.currentPhoto.id);
             if (photoIndex !== -1) {
-                Object.assign(this.photos[photoIndex], metadata);
+                this.photos[photoIndex].is_favorite = metadata.isFavorite ? 1 : 0;
+                this.photos[photoIndex].is_nsfw = metadata.isNsfw ? 1 : 0;
+                this.photos[photoIndex].custom_tags = metadata.customTags;
+                this.photos[photoIndex].rating = metadata.rating;
+                this.photos[photoIndex].notes = metadata.notes;
                 this.renderGallery(); // Re-render to show favorite star
             }
+            
+            // Also update the current photo object
+            this.currentPhoto.is_favorite = metadata.isFavorite ? 1 : 0;
+            this.currentPhoto.is_nsfw = metadata.isNsfw ? 1 : 0;
             
         } catch (error) {
             console.error('Error saving metadata:', error);
