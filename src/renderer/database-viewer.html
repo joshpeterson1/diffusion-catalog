@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #2d2d2d;
+            padding: 15px 20px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .table-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-selector label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .table-selector select {
+            padding: 6px 12px;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            background-color: #3a3a3a;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .refresh-btn {
+            padding: 6px 12px;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            background-color: #007acc;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            background-color: #0086d9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-info {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            background-color: #2a2a2a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #3a3a3a;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #404040;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+            word-break: break-word;
+            max-width: 300px;
+        }
+
+        tr:hover {
+            background-color: #333;
+        }
+
+        .null-value {
+            color: #888;
+            font-style: italic;
+        }
+
+        .boolean-true {
+            color: #4CAF50;
+        }
+
+        .boolean-false {
+            color: #f44336;
+        }
+
+        .number-value {
+            color: #2196F3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #f44336;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="bi bi-database"></i> Database Viewer</h1>
+        <div class="table-selector">
+            <label for="tableSelect">Table:</label>
+            <select id="tableSelect">
+                <option value="">Select a table...</option>
+                <option value="images">images</option>
+                <option value="user_metadata">user_metadata</option>
+                <option value="ai_metadata">ai_metadata</option>
+                <option value="watch_directories">watch_directories</option>
+            </select>
+            <button id="refreshBtn" class="refresh-btn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="tableInfo" class="table-info"></div>
+        <div class="table-container">
+            <div id="tableContent">
+                <div class="no-data">Select a table to view its contents</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DatabaseViewer {
+            constructor() {
+                this.currentTable = '';
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('tableSelect').addEventListener('change', (e) => {
+                    this.loadTable(e.target.value);
+                });
+
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    if (this.currentTable) {
+                        this.loadTable(this.currentTable);
+                    }
+                });
+            }
+
+            async loadTable(tableName) {
+                if (!tableName) {
+                    document.getElementById('tableContent').innerHTML = '<div class="no-data">Select a table to view its contents</div>';
+                    document.getElementById('tableInfo').textContent = '';
+                    return;
+                }
+
+                this.currentTable = tableName;
+                document.getElementById('tableContent').innerHTML = '<div class="loading">Loading...</div>';
+
+                try {
+                    const data = await window.electronAPI.getTableData(tableName);
+                    this.renderTable(data, tableName);
+                } catch (error) {
+                    console.error('Error loading table:', error);
+                    document.getElementById('tableContent').innerHTML = '<div class="error">Error loading table data</div>';
+                }
+            }
+
+            renderTable(data, tableName) {
+                const tableInfo = document.getElementById('tableInfo');
+                const tableContent = document.getElementById('tableContent');
+
+                if (!data || data.length === 0) {
+                    tableContent.innerHTML = '<div class="no-data">No data in this table</div>';
+                    tableInfo.textContent = `Table: ${tableName} (0 rows)`;
+                    return;
+                }
+
+                tableInfo.textContent = `Table: ${tableName} (${data.length} rows)`;
+
+                // Get column names from first row
+                const columns = Object.keys(data[0]);
+
+                // Build table HTML
+                let html = '<table><thead><tr>';
+                columns.forEach(col => {
+                    html += `<th>${col}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+
+                data.forEach(row => {
+                    html += '<tr>';
+                    columns.forEach(col => {
+                        const value = row[col];
+                        const formattedValue = this.formatValue(value);
+                        html += `<td>${formattedValue}</td>`;
+                    });
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                tableContent.innerHTML = html;
+            }
+
+            formatValue(value) {
+                if (value === null || value === undefined) {
+                    return '<span class="null-value">NULL</span>';
+                }
+
+                if (typeof value === 'boolean') {
+                    return `<span class="boolean-${value}">${value}</span>`;
+                }
+
+                if (typeof value === 'number') {
+                    return `<span class="number-value">${value}</span>`;
+                }
+
+                if (typeof value === 'string') {
+                    // Truncate very long strings
+                    if (value.length > 200) {
+                        return `${value.substring(0, 200)}...`;
+                    }
+                    return value;
+                }
+
+                return String(value);
+            }
+        }
+
+        // Initialize the viewer when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new DatabaseViewer();
+        });
+    </script>
+</body>
+</html>

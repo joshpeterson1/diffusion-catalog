@@ -449,6 +449,22 @@ class DatabaseManager {
     }
   }
 
+  async getTableData(tableName) {
+    try {
+      // Validate table name to prevent SQL injection
+      const validTables = ['images', 'user_metadata', 'ai_metadata', 'watch_directories'];
+      if (!validTables.includes(tableName)) {
+        throw new Error('Invalid table name');
+      }
+
+      const stmt = this.db.prepare(`SELECT * FROM ${tableName} ORDER BY ROWID LIMIT 1000`);
+      return stmt.all();
+    } catch (error) {
+      console.error('Error getting table data:', error);
+      throw error;
+    }
+  }
+
   close() {
     if (this.db) {
       this.db.close();

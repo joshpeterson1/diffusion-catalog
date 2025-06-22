@@ -145,7 +145,7 @@ class PhotoCatalogApp {
           {
             label: 'View Database',
             click: async () => {
-              this.mainWindow.webContents.send('menu-view-db');
+              this.openDatabaseViewer();
             }
           },
           { type: 'separator' },
@@ -261,6 +261,28 @@ class PhotoCatalogApp {
     Menu.setApplicationMenu(menu);
   }
 
+  openDatabaseViewer() {
+    // Create a new window for the database viewer
+    const dbViewerWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      parent: this.mainWindow,
+      modal: false,
+      icon: path.join(__dirname, '..', '..', 'icon.ico'),
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js')
+      }
+    });
+
+    dbViewerWindow.loadFile('src/renderer/database-viewer.html');
+
+    if (process.argv.includes('--dev')) {
+      dbViewerWindow.webContents.openDevTools();
+    }
+  }
+
   setupIpcHandlers() {
     // Get photos with pagination
     ipcMain.handle('get-photos', async (event, options = {}) => {
@@ -344,6 +366,11 @@ class PhotoCatalogApp {
     // Clear all NSFW handler
     ipcMain.handle('clear-all-nsfw', async () => {
       return await this.database.clearAllNsfw();
+    });
+
+    // Get table data handler
+    ipcMain.handle('get-table-data', async (event, tableName) => {
+      return await this.database.getTableData(tableName);
     });
   }
 }

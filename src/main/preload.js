@@ -44,5 +44,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Clear operations
   clearAllFavorites: () => ipcRenderer.invoke('clear-all-favorites'),
-  clearAllNsfw: () => ipcRenderer.invoke('clear-all-nsfw')
+  clearAllNsfw: () => ipcRenderer.invoke('clear-all-nsfw'),
+  
+  // Database viewer
+  getTableData: (tableName) => ipcRenderer.invoke('get-table-data', tableName)
 });
