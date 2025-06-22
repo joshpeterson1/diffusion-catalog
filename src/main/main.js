@@ -205,7 +205,16 @@ class PhotoCatalogApp {
         submenu: [
           {
             label: 'About',
-            role: 'about'
+            click: () => {
+              const { dialog } = require('electron');
+              dialog.showMessageBox(this.mainWindow, {
+                type: 'info',
+                title: 'About AI Photo Catalog',
+                message: 'AI Photo Catalog',
+                detail: 'A powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.',
+                icon: path.join(__dirname, '..', '..', 'icon.ico')
+              });
+            }
           }
         ]
       }
