@@ -361,7 +361,7 @@ class PhotoCatalogApp {
         if (photo.is_favorite) {
             const favoriteIcon = document.createElement('div');
             favoriteIcon.className = 'favorite-indicator';
-            favoriteIcon.textContent = '★';
+            favoriteIcon.innerHTML = '<i class="bi bi-star-fill"></i>';
             photoDiv.appendChild(favoriteIcon);
         }
 
@@ -369,7 +369,7 @@ class PhotoCatalogApp {
         if (photo.is_nsfw) {
             const nsfwIcon = document.createElement('div');
             nsfwIcon.className = 'nsfw-indicator';
-            nsfwIcon.textContent = '🔞';
+            nsfwIcon.innerHTML = '<i class="bi bi-person-fill-lock"></i>';
             photoDiv.appendChild(nsfwIcon);
         }
 
@@ -482,10 +482,10 @@ class PhotoCatalogApp {
         const isNsfw = metadata.is_nsfw || false;
         
         favoriteBtn.classList.toggle('active', isFavorite);
-        favoriteBtn.textContent = isFavorite ? 'Remove Favorite' : 'Add Favorite';
+        favoriteBtn.innerHTML = isFavorite ? '<i class="bi bi-star-fill"></i> Remove Favorite' : '<i class="bi bi-star"></i> Add Favorite';
         
         nsfwBtn.classList.toggle('active', isNsfw);
-        nsfwBtn.textContent = isNsfw ? 'Remove NSFW' : 'Mark NSFW';
+        nsfwBtn.innerHTML = isNsfw ? '<i class="bi bi-person-fill-lock"></i> Remove NSFW' : '<i class="bi bi-person-lock"></i> Mark NSFW';
         
         document.getElementById('customTags').value = metadata.custom_tags || '';
         document.getElementById('rating').value = metadata.rating || '';
@@ -903,7 +903,7 @@ class PhotoCatalogApp {
     async toggleModalFavorite() {
         const button = document.getElementById('favoriteToggle');
         const isActive = button.classList.toggle('active');
-        button.textContent = isActive ? 'Remove Favorite' : 'Add Favorite';
+        button.innerHTML = isActive ? '<i class="bi bi-star-fill"></i> Remove Favorite' : '<i class="bi bi-star"></i> Add Favorite';
         
         // Save immediately
         await this.saveInstantMetadata('favorite', isActive);
@@ -912,7 +912,7 @@ class PhotoCatalogApp {
     async toggleModalNsfw() {
         const button = document.getElementById('nsfwToggle');
         const isActive = button.classList.toggle('active');
-        button.textContent = isActive ? 'Remove NSFW' : 'Mark NSFW';
+        button.innerHTML = isActive ? '<i class="bi bi-person-fill-lock"></i> Remove NSFW' : '<i class="bi bi-person-lock"></i> Mark NSFW';
         
         // Save immediately
         await this.saveInstantMetadata('nsfw', isActive);
@@ -949,9 +949,9 @@ class PhotoCatalogApp {
             // Revert the button state on error
             const button = document.getElementById(type === 'favorite' ? 'favoriteToggle' : 'nsfwToggle');
             button.classList.toggle('active', !value);
-            button.textContent = type === 'favorite' 
-                ? (!value ? 'Remove Favorite' : 'Add Favorite')
-                : (!value ? 'Remove NSFW' : 'Mark NSFW');
+            button.innerHTML = type === 'favorite' 
+                ? (!value ? '<i class="bi bi-star-fill"></i> Remove Favorite' : '<i class="bi bi-star"></i> Add Favorite')
+                : (!value ? '<i class="bi bi-person-fill-lock"></i> Remove NSFW' : '<i class="bi bi-person-lock"></i> Mark NSFW');
         }
     }
 

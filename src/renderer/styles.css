@@ -325,13 +325,12 @@ body {
 .nsfw-indicator {
     position: absolute;
     top: 8px;
-    right: 8px;
+    left: 8px;
     color: #ff4444;
     font-size: 14px;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 3px;
     padding: 2px 4px;
-    margin-top: 20px;
 }
 
 .pagination-container {
