@@ -116,8 +116,13 @@ class PhotoCatalogApp {
             
             const label = document.createElement('label');
             label.htmlFor = `folder-${folder.path}`;
+            
+            // Check if this is a ZIP archive folder
+            const isZipFolder = folder.path.toLowerCase().endsWith('.zip');
+            const archiveIcon = isZipFolder ? '<i class="bi bi-archive-fill" style="margin-left: 4px; color: #888;"></i>' : '';
+            
             label.innerHTML = `
-                <span class="folder-name">${folder.name}</span>
+                <span class="folder-name">${folder.name}${archiveIcon}</span>
                 <span class="folder-count">(${folder.imageCount})</span>
             `;
             
@@ -578,7 +583,13 @@ class PhotoCatalogApp {
         if (!this.currentPhoto) return;
         
         try {
-            await window.electronAPI.openInDirectory(this.currentPhoto.path);
+            // For ZIP entries, open the ZIP file location instead of the internal path
+            if (this.currentPhoto.path.includes('::')) {
+                const zipPath = this.currentPhoto.path.split('::')[0];
+                await window.electronAPI.openInDirectory(zipPath);
+            } else {
+                await window.electronAPI.openInDirectory(this.currentPhoto.path);
+            }
         } catch (error) {
             console.error('Error opening in directory:', error);
             alert('Failed to open directory');

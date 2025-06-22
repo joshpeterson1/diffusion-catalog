@@ -175,10 +175,19 @@ class DatabaseManager {
     
     // Filter by selected folders if any are specified
     if (selectedFolders && selectedFolders.length > 0) {
-      const folderConditions = selectedFolders.map(() => 'i.path LIKE ?').join(' OR ');
+      const folderConditions = selectedFolders.map(() => {
+        // Handle both ZIP archives and regular folders
+        return '(i.path LIKE ? OR i.archive_path = ?)';
+      }).join(' OR ');
       query += ` AND (${folderConditions})`;
       selectedFolders.forEach(folder => {
-        params.push(`${folder}%`);
+        if (folder.toLowerCase().endsWith('.zip')) {
+          // For ZIP files, match archive_path exactly and path starting with ZIP path
+          params.push(`${folder}::%`, folder);
+        } else {
+          // For regular folders, match path starting with folder path
+          params.push(`${folder}%`, folder);
+        }
       });
       console.log('Added folder filters for:', selectedFolders);
     }
@@ -357,10 +366,13 @@ class DatabaseManager {
 
   async getSubfolders() {
     try {
-      // Get all unique directory paths from images
+      // Get all unique directory paths from images, including ZIP archives
       const stmt = this.db.prepare(`
         SELECT DISTINCT 
-          SUBSTR(path, 1, LENGTH(path) - LENGTH(filename) - 1) as folder_path,
+          CASE 
+            WHEN is_archive = 1 THEN archive_path
+            ELSE SUBSTR(path, 1, LENGTH(path) - LENGTH(filename) - 1)
+          END as folder_path,
           COUNT(*) as image_count
         FROM images 
         GROUP BY folder_path
@@ -371,12 +383,22 @@ class DatabaseManager {
       
       // Process folders to extract meaningful subfolder names
       const subfolders = folders.map(folder => {
-        const parts = folder.folder_path.split(/[\/\\]/);
-        const folderName = parts[parts.length - 1] || parts[parts.length - 2];
+        let folderName;
+        let folderPath = folder.folder_path;
+        
+        if (folderPath.toLowerCase().endsWith('.zip')) {
+          // For ZIP files, use the ZIP filename as the folder name
+          const parts = folderPath.split(/[\/\\]/);
+          folderName = parts[parts.length - 1];
+        } else {
+          // For regular directories, use the directory name
+          const parts = folderPath.split(/[\/\\]/);
+          folderName = parts[parts.length - 1] || parts[parts.length - 2];
+        }
         
         return {
           name: folderName,
-          path: folder.folder_path,
+          path: folderPath,
           imageCount: folder.image_count
         };
       }).filter(folder => folder.name && folder.name.trim() !== '');
