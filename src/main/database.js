@@ -114,7 +114,8 @@ class DatabaseManager {
       startDate,
       endDate,
       sortBy = 'date_taken',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
+      isFavorite
     } = options;
 
     let query = `
@@ -134,6 +135,11 @@ class DatabaseManager {
     if (endDate) {
       query += ' AND i.date_taken <= ?';
       params.push(endDate);
+    }
+    
+    if (isFavorite !== undefined) {
+      query += ' AND u.is_favorite = ?';
+      params.push(isFavorite ? 1 : 0);
     }
     
     query += ` ORDER BY i.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
@@ -168,12 +174,12 @@ class DatabaseManager {
     
     if (filters.isFavorite !== undefined) {
       query += ' AND u.is_favorite = ?';
-      params.push(filters.isFavorite);
+      params.push(filters.isFavorite ? 1 : 0);
     }
     
     if (filters.isNsfw !== undefined) {
       query += ' AND u.is_nsfw = ?';
-      params.push(filters.isNsfw);
+      params.push(filters.isNsfw ? 1 : 0);
     }
     
     query += ' ORDER BY i.date_taken DESC LIMIT 500';
@@ -191,8 +197,8 @@ class DatabaseManager {
     
     return stmt.run(
       imageId,
-      metadata.isFavorite || false,
-      metadata.isNsfw || false,
+      metadata.isFavorite ? 1 : 0,  // Convert boolean to integer
+      metadata.isNsfw ? 1 : 0,      // Convert boolean to integer
       metadata.customTags || null,
       metadata.rating || null,
       metadata.notes || null
