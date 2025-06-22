@@ -307,7 +307,12 @@ class PhotoCatalogApp {
     renderGallery() {
         const gallery = document.getElementById('galleryGrid');
         gallery.innerHTML = '';
-        this.appendToGallery(this.photos);
+        
+        if (this.photos.length === 0) {
+            this.showEmptyState();
+        } else {
+            this.appendToGallery(this.photos);
+        }
     }
 
     appendToGallery(photos) {
@@ -1097,6 +1102,23 @@ class PhotoCatalogApp {
         } catch (error) {
             console.error('Error toggling NSFW:', error);
         }
+    }
+
+    showEmptyState() {
+        const gallery = document.getElementById('galleryGrid');
+        gallery.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-file-earmark-plus"></i>
+                <h3>No Photos</h3>
+                <p>Click here to add a directory or ZIP archive</p>
+            </div>
+        `;
+        
+        // Add click handler to the empty state
+        const emptyState = gallery.querySelector('.empty-state');
+        emptyState.addEventListener('click', () => {
+            this.addDirectory();
+        });
     }
 
     formatFileSize(bytes) {
