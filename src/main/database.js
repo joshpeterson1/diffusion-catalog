@@ -168,13 +168,8 @@ class DatabaseManager {
     }
 
     if (options.excludeNsfw) {
-      if (isFavorite === true) {
-        // For favorites query, add NSFW exclusion to existing WHERE clause
-        query += ' AND (u.is_nsfw IS NULL OR u.is_nsfw = 0)';
-      } else {
-        // For all photos query, exclude NSFW
-        query += ' AND (u.is_nsfw IS NULL OR u.is_nsfw = 0)';
-      }
+      // Exclude NSFW photos - only show photos that are NOT marked as NSFW
+      query += ' AND (u.is_nsfw IS NULL OR u.is_nsfw = 0)';
       console.log('Added NSFW exclusion filter');
     }
     

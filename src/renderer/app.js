@@ -41,6 +41,9 @@ class PhotoCatalogApp {
         document.getElementById('nsfwFilter').addEventListener('change', () => this.toggleNsfw());
         document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('sortOrder').addEventListener('change', () => this.refreshPhotos());
+        
+        // Initialize NSFW filter state from checkbox
+        this.includeNsfw = document.getElementById('nsfwFilter').checked;
 
         // Pagination
         document.getElementById('prevPageBtn').addEventListener('click', () => this.previousPage());
