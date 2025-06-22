@@ -517,12 +517,18 @@ class PhotoCatalogApp {
             otherInfo.innerHTML = '<div>No additional metadata available</div>';
         }
 
-        // User metadata - update button states
+        // User metadata - update button states and text
         const favoriteBtn = document.getElementById('favoriteToggle');
         const nsfwBtn = document.getElementById('nsfwToggle');
         
-        favoriteBtn.classList.toggle('active', metadata.is_favorite || false);
-        nsfwBtn.classList.toggle('active', metadata.is_nsfw || false);
+        const isFavorite = metadata.is_favorite || false;
+        const isNsfw = metadata.is_nsfw || false;
+        
+        favoriteBtn.classList.toggle('active', isFavorite);
+        favoriteBtn.textContent = isFavorite ? 'Remove Favorite' : 'Add Favorite';
+        
+        nsfwBtn.classList.toggle('active', isNsfw);
+        nsfwBtn.textContent = isNsfw ? 'Remove NSFW' : 'Mark NSFW';
         
         document.getElementById('customTags').value = metadata.custom_tags || '';
         document.getElementById('rating').value = metadata.rating || '';
@@ -935,12 +941,14 @@ class PhotoCatalogApp {
 
     toggleModalFavorite() {
         const button = document.getElementById('favoriteToggle');
-        button.classList.toggle('active');
+        const isActive = button.classList.toggle('active');
+        button.textContent = isActive ? 'Remove Favorite' : 'Add Favorite';
     }
 
     toggleModalNsfw() {
         const button = document.getElementById('nsfwToggle');
-        button.classList.toggle('active');
+        const isActive = button.classList.toggle('active');
+        button.textContent = isActive ? 'Remove NSFW' : 'Mark NSFW';
     }
 
     formatFileSize(bytes) {
