@@ -361,6 +361,9 @@ class PhotoCatalogApp {
         // Add favorite toggle icon (always present)
         const favoriteIcon = document.createElement('div');
         favoriteIcon.className = photo.is_favorite ? 'favorite-indicator active' : 'favorite-indicator';
+        if (this.viewMode === 'list') {
+            favoriteIcon.classList.add('list-view');
+        }
         favoriteIcon.innerHTML = photo.is_favorite ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
         favoriteIcon.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent opening the modal
@@ -371,6 +374,9 @@ class PhotoCatalogApp {
         // Add NSFW toggle icon (always present)
         const nsfwIcon = document.createElement('div');
         nsfwIcon.className = photo.is_nsfw ? 'nsfw-indicator active' : 'nsfw-indicator';
+        if (this.viewMode === 'list') {
+            nsfwIcon.classList.add('list-view');
+        }
         nsfwIcon.innerHTML = photo.is_nsfw ? '<i class="bi bi-person-fill-lock"></i>' : '<i class="bi bi-person-lock"></i>';
         nsfwIcon.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent opening the modal
