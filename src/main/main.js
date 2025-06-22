@@ -103,6 +103,11 @@ class PhotoCatalogApp {
     ipcMain.handle('get-subfolders', async () => {
       return await this.database.getSubfolders();
     });
+
+    // Get raw EXIF data handler
+    ipcMain.handle('get-raw-exif-data', async (event, filePath) => {
+      return await this.metadataExtractor.extractRawExifData(filePath);
+    });
   }
 }
 

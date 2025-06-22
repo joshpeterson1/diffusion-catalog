@@ -25,5 +25,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   debugDatabase: () => ipcRenderer.invoke('debug-database'),
   
   // Folder operations
-  getSubfolders: () => ipcRenderer.invoke('get-subfolders')
+  getSubfolders: () => ipcRenderer.invoke('get-subfolders'),
+  
+  // EXIF operations
+  getRawExifData: (filePath) => ipcRenderer.invoke('get-raw-exif-data', filePath)
 });
