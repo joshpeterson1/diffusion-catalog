@@ -45,8 +45,6 @@ class MetadataExtractor {
 
   async extractMetadata(imageId, filePath) {
     try {
-      console.log(`Extracting metadata for: ${path.basename(filePath)}`);
-      
       // Extract comprehensive EXIF data with more options
       const exifData = await exifr.parse(filePath, {
         tiff: true,
@@ -59,16 +57,10 @@ class MetadataExtractor {
         icc: true,
         jfif: true,
         ihdr: true,
-        iptc: true,
         xmp: true,
         chunked: true,
         mergeOutput: true
       });
-      
-      console.log(`EXIF data found:`, exifData ? Object.keys(exifData).length : 0, 'fields');
-      if (exifData) {
-        console.log('Sample EXIF fields:', Object.keys(exifData).slice(0, 10));
-      }
       
       // Get image dimensions using Sharp
       const metadata = await sharp(filePath).metadata();
@@ -84,16 +76,12 @@ class MetadataExtractor {
       `);
       
       const dateTaken = this.extractDateTaken(exifData);
-      console.log(`Date taken extracted: ${dateTaken}`);
       updateStmt.run(dateTaken, metadata.width, metadata.height, thumbnailPath, imageId);
       
       // Extract AI metadata if present
       const aiMetadata = this.extractAiMetadata(exifData, filePath);
       if (aiMetadata) {
-        console.log(`Saving AI metadata for ${path.basename(filePath)}:`, JSON.stringify(aiMetadata, null, 2));
         await this.database.addAiMetadata(imageId, aiMetadata);
-      } else {
-        console.log(`No AI metadata found for ${path.basename(filePath)}`);
       }
       
     } catch (error) {
@@ -102,10 +90,7 @@ class MetadataExtractor {
   }
 
   extractDateTaken(exifData) {
-    if (!exifData) {
-      console.log('No EXIF data for date extraction');
-      return null;
-    }
+    if (!exifData) return null;
     
     // Try different date fields in order of preference
     const dateFields = [
@@ -116,61 +101,47 @@ class MetadataExtractor {
       'DateTimeDigitized'
     ];
     
-    console.log('Available EXIF date fields:', dateFields.filter(field => exifData[field]));
-    
     for (const field of dateFields) {
       if (exifData[field]) {
         try {
           const date = new Date(exifData[field]);
           if (!isNaN(date.getTime())) {
-            console.log(`Using date from ${field}: ${date.toISOString()}`);
             return date.toISOString();
           }
         } catch (error) {
-          console.log(`Error parsing date from ${field}:`, error);
+          // Continue to next field
         }
       }
     }
     
-    console.log('No valid date found in EXIF data');
     return null;
   }
 
   extractAiMetadata(exifData, filePath) {
-    if (!exifData) {
-      console.log('No EXIF data for AI metadata extraction');
-      return null;
-    }
+    if (!exifData) return null;
     
-    console.log('Checking for AI metadata in EXIF fields...');
     let aiData = {};
     
     // Check all possible EXIF fields that might contain AI metadata
     const textFields = [
-      { name: 'Parameters', value: exifData.Parameters },
-      { name: 'UserComment', value: exifData.UserComment },
-      { name: 'ImageDescription', value: exifData.ImageDescription },
-      { name: 'Software', value: exifData.Software },
-      { name: 'Artist', value: exifData.Artist },
-      { name: 'Copyright', value: exifData.Copyright },
-      { name: 'XPComment', value: exifData.XPComment },
-      { name: 'XPKeywords', value: exifData.XPKeywords },
-      { name: 'prompt', value: exifData.prompt },
-      { name: 'workflow', value: exifData.workflow },
-      { name: 'Comment', value: exifData.Comment }
+      exifData.Parameters,
+      exifData.UserComment,
+      exifData.ImageDescription,
+      exifData.Software,
+      exifData.Artist,
+      exifData.Copyright,
+      exifData.XPComment,
+      exifData.XPKeywords,
+      exifData.prompt,
+      exifData.workflow,
+      exifData.Comment
     ];
     
-    // Log which fields have data
-    const fieldsWithData = textFields.filter(field => field.value);
-    console.log('EXIF fields with text data:', fieldsWithData.map(f => f.name));
-    
     // Try to parse AI data from each field
-    for (const field of textFields) {
-      if (field.value && typeof field.value === 'string') {
-        console.log(`Parsing AI data from ${field.name}: ${field.value.substring(0, 100)}...`);
-        const parsedData = this.parseAiText(field.value);
+    for (const text of textFields) {
+      if (text && typeof text === 'string') {
+        const parsedData = this.parseAiText(text);
         if (Object.keys(parsedData).length > 0) {
-          console.log(`Found AI data in ${field.name}:`, parsedData);
           // Merge parsed data, giving priority to first found values
           aiData = { ...parsedData, ...aiData };
         }
@@ -189,68 +160,51 @@ class MetadataExtractor {
   parseAiText(text) {
     const aiData = {};
     
-    // Enhanced patterns for AI metadata - more comprehensive matching
+    // Parse the Parameters field format from your example
+    // The text appears to be in a specific format with comma-separated key-value pairs
+    
+    // First, try to extract the main prompt (everything before "Negative prompt:")
+    const negativePromptMatch = text.match(/Negative prompt:\s*(.+?)(?:\s+Steps:|$)/s);
+    const promptMatch = text.match(/^(.+?)(?:\s*Negative prompt:|$)/s);
+    
+    if (promptMatch) {
+      let prompt = promptMatch[1].trim();
+      // Remove any trailing commas or periods
+      prompt = prompt.replace(/[,.]$/, '');
+      if (prompt) {
+        aiData.prompt = prompt;
+      }
+    }
+    
+    if (negativePromptMatch) {
+      aiData.negativePrompt = negativePromptMatch[1].trim();
+    }
+    
+    // Parse other parameters using more specific patterns
     const patterns = {
-      prompt: [
-        /(?:^|\n)(?:Prompt|prompt):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is,
-        /(?:^|\n)(?:Positive prompt|positive_prompt):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is,
-        /^(.+?)(?:\nNegative prompt:|$)/is // Fallback: everything before "Negative prompt:"
-      ],
-      negativePrompt: [
-        /(?:^|\n)(?:Negative prompt|negative_prompt):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is,
-        /(?:^|\n)(?:Negative|neg):\s*(.+?)(?:\n(?:[A-Z][a-z]+:|$)|$)/is
-      ],
-      model: [
-        /(?:^|\n)(?:Model|model):\s*(.+?)(?:\n|,|$)/i,
-        /(?:^|\n)(?:Model hash|model_hash):\s*(.+?)(?:\n|,|$)/i,
-        /(?:^|\n)(?:Checkpoint|checkpoint):\s*(.+?)(?:\n|,|$)/i
-      ],
-      steps: [
-        /(?:^|\n)(?:Steps|steps):\s*(\d+)/i,
-        /(?:^|\n)(?:Sampling steps|sampling_steps):\s*(\d+)/i
-      ],
-      cfgScale: [
-        /(?:^|\n)(?:CFG Scale|cfg_scale|CFG|cfg):\s*([\d.]+)/i,
-        /(?:^|\n)(?:Guidance scale|guidance_scale):\s*([\d.]+)/i
-      ],
-      seed: [
-        /(?:^|\n)(?:Seed|seed):\s*(-?\d+)/i
-      ],
-      sampler: [
-        /(?:^|\n)(?:Sampler|sampler):\s*(.+?)(?:\n|,|$)/i,
-        /(?:^|\n)(?:Sampling method|sampling_method):\s*(.+?)(?:\n|,|$)/i
-      ],
-      scheduler: [
-        /(?:^|\n)(?:Schedule type|schedule_type|Scheduler|scheduler):\s*(.+?)(?:\n|,|$)/i
-      ],
-      size: [
-        /(?:^|\n)(?:Size|size):\s*(\d+x\d+)/i,
-        /(?:^|\n)(?:Resolution|resolution):\s*(\d+x\d+)/i
-      ]
+      steps: /Steps:\s*(\d+)/i,
+      sampler: /Sampler:\s*([^,]+)/i,
+      cfgScale: /CFG scale:\s*([\d.]+)/i,
+      seed: /Seed:\s*(\d+)/i,
+      size: /Size:\s*(\d+x\d+)/i,
+      model: /Model:\s*([^,]+)/i,
+      modelHash: /Model hash:\s*([^,]+)/i
     };
     
-    // Try each pattern for each field
-    for (const [key, patternArray] of Object.entries(patterns)) {
-      for (const pattern of patternArray) {
-        const match = text.match(pattern);
-        if (match && !aiData[key]) { // Only set if not already found
-          let value = match[1].trim();
-          
-          // Clean up common artifacts
-          value = value.replace(/,$/, ''); // Remove trailing comma
-          value = value.replace(/\s+/g, ' '); // Normalize whitespace
-          
-          // Type conversion
-          if (key === 'steps' || key === 'seed') {
-            value = parseInt(value);
-          } else if (key === 'cfgScale') {
-            value = parseFloat(value);
-          }
-          
-          if (value !== '' && !isNaN(value) || typeof value === 'string') {
-            aiData[key] = value;
-          }
-          break; // Found a match, move to next field
+    for (const [key, pattern] of Object.entries(patterns)) {
+      const match = text.match(pattern);
+      if (match) {
+        let value = match[1].trim();
+        
+        // Type conversion
+        if (key === 'steps' || key === 'seed') {
+          value = parseInt(value);
+        } else if (key === 'cfgScale') {
+          value = parseFloat(value);
+        }
+        
+        if (value !== '' && (typeof value === 'string' || !isNaN(value))) {
+          aiData[key] = value;
         }
       }
     }
