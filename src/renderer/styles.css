@@ -124,6 +124,10 @@ body {
     margin-bottom: 20px;
 }
 
+.filter-group select {
+    margin-bottom: 8px;
+}
+
 .filter-group label {
     display: block;
     margin-bottom: 8px;

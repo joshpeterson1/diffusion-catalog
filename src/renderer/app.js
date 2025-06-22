@@ -36,6 +36,7 @@ class PhotoCatalogApp {
         window.electronAPI.onMenuClearFavorites(() => this.clearAllFavorites());
         window.electronAPI.onMenuClearNsfw(() => this.clearAllNsfw());
         window.electronAPI.onMenuVitals(() => this.showVitals());
+        window.electronAPI.onMenuRebuildDb(() => this.rebuildDatabase());
 
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
@@ -912,6 +913,28 @@ class PhotoCatalogApp {
         } catch (error) {
             console.error('Error getting vitals:', error);
             alert('Failed to get system vitals');
+        }
+    }
+
+    async rebuildDatabase() {
+        if (confirm('Are you sure you want to rebuild the database? This will clear all data and re-scan all watched directories. This cannot be undone.')) {
+            try {
+                this.showLoading(true);
+                const result = await window.electronAPI.rebuildDatabase();
+                if (result.success) {
+                    alert(result.message);
+                    // Reload subfolders and photos
+                    await this.loadSubfolders();
+                    await this.loadPhotos(true);
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error rebuilding database:', error);
+                alert('Failed to rebuild database');
+            } finally {
+                this.showLoading(false);
+            }
         }
     }
 

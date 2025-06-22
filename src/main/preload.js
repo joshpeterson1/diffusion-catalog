@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuClearFavorites: (callback) => ipcRenderer.on('menu-clear-favorites', callback),
   onMenuClearNsfw: (callback) => ipcRenderer.on('menu-clear-nsfw', callback),
   onMenuVitals: (callback) => ipcRenderer.on('menu-vitals', callback),
+  onMenuRebuildDb: (callback) => ipcRenderer.on('menu-rebuild-db', callback),
   
   // Clear operations
   clearAllFavorites: () => ipcRenderer.invoke('clear-all-favorites'),
@@ -51,5 +52,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTableData: (tableName) => ipcRenderer.invoke('get-table-data', tableName),
   
   // Vitals
-  getVitals: () => ipcRenderer.invoke('get-vitals')
+  getVitals: () => ipcRenderer.invoke('get-vitals'),
+  
+  // Rebuild database
+  rebuildDatabase: () => ipcRenderer.invoke('rebuild-database')
 });

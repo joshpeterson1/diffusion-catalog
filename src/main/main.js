@@ -167,6 +167,13 @@ class PhotoCatalogApp {
             click: async () => {
               this.mainWindow.webContents.send('menu-vitals');
             }
+          },
+          { type: 'separator' },
+          {
+            label: 'Rebuild Database',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-rebuild-db');
+            }
           }
         ]
       },
@@ -390,6 +397,45 @@ class PhotoCatalogApp {
         database: databaseVitals,
         timestamp: new Date().toISOString()
       };
+    });
+
+    // Rebuild database handler
+    ipcMain.handle('rebuild-database', async () => {
+      try {
+        // Clear existing data
+        const clearResult = await this.database.clearAll();
+        if (!clearResult.success) {
+          return { success: false, message: `Failed to clear database: ${clearResult.message}` };
+        }
+
+        // Get all watched directories
+        const watchedDirs = Array.from(this.fileWatcher.watchers.keys());
+        
+        if (watchedDirs.length === 0) {
+          return { success: true, message: 'Database cleared. No directories to rebuild from.' };
+        }
+
+        // Re-scan all watched directories
+        let totalFiles = 0;
+        for (const dirPath of watchedDirs) {
+          const result = await this.fileWatcher.addDirectory(dirPath);
+          if (result.success) {
+            // Extract file count from success message
+            const match = result.message.match(/Found (\d+) files/);
+            if (match) {
+              totalFiles += parseInt(match[1]);
+            }
+          }
+        }
+
+        return { 
+          success: true, 
+          message: `Database rebuilt successfully. Processed ${totalFiles} files from ${watchedDirs.length} directories.` 
+        };
+      } catch (error) {
+        console.error('Error rebuilding database:', error);
+        return { success: false, message: error.message };
+      }
     });
   }
 }
