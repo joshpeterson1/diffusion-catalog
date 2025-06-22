@@ -302,6 +302,7 @@ class PhotoCatalogApp {
         } finally {
             this.isLoading = false;
             this.showLoading(false);
+            this.restoreInputFocus();
         }
     }
 
@@ -753,6 +754,7 @@ class PhotoCatalogApp {
             alert('Failed to add directory or ZIP file');
         } finally {
             this.showLoading(false);
+            this.restoreInputFocus();
         }
     }
 
@@ -781,6 +783,19 @@ class PhotoCatalogApp {
 
     showLoading(show) {
         document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        
+        // Ensure search input remains enabled and focusable
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.disabled = false;
+            // Re-enable interaction after loading
+            if (!show) {
+                setTimeout(() => {
+                    searchInput.disabled = false;
+                    searchInput.style.pointerEvents = 'auto';
+                }, 100);
+            }
+        }
     }
 
     async clearDatabase() {
@@ -934,6 +949,7 @@ class PhotoCatalogApp {
                 alert('Failed to rebuild database');
             } finally {
                 this.showLoading(false);
+                this.restoreInputFocus();
             }
         }
     }
@@ -1179,6 +1195,23 @@ class PhotoCatalogApp {
         emptyState.addEventListener('click', () => {
             this.addDirectory();
         });
+    }
+
+    restoreInputFocus() {
+        // Ensure all inputs are properly enabled and focusable
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        
+        if (searchInput) {
+            searchInput.disabled = false;
+            searchInput.style.pointerEvents = 'auto';
+            searchInput.style.opacity = '1';
+        }
+        
+        if (searchBtn) {
+            searchBtn.disabled = false;
+            searchBtn.style.pointerEvents = 'auto';
+        }
     }
 
     formatFileSize(bytes) {
