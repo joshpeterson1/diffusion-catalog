@@ -357,21 +357,25 @@ class PhotoCatalogApp {
             photoDiv.appendChild(infoDiv);
         }
 
-        // Add favorite indicator
-        if (photo.is_favorite) {
-            const favoriteIcon = document.createElement('div');
-            favoriteIcon.className = 'favorite-indicator';
-            favoriteIcon.innerHTML = '<i class="bi bi-star-fill"></i>';
-            photoDiv.appendChild(favoriteIcon);
-        }
+        // Add favorite toggle icon (always present)
+        const favoriteIcon = document.createElement('div');
+        favoriteIcon.className = photo.is_favorite ? 'favorite-indicator active' : 'favorite-indicator';
+        favoriteIcon.innerHTML = photo.is_favorite ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
+        favoriteIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent opening the modal
+            this.togglePhotoFavorite(photo);
+        });
+        photoDiv.appendChild(favoriteIcon);
 
-        // Add NSFW indicator
-        if (photo.is_nsfw) {
-            const nsfwIcon = document.createElement('div');
-            nsfwIcon.className = 'nsfw-indicator';
-            nsfwIcon.innerHTML = '<i class="bi bi-person-fill-lock"></i>';
-            photoDiv.appendChild(nsfwIcon);
-        }
+        // Add NSFW toggle icon (always present)
+        const nsfwIcon = document.createElement('div');
+        nsfwIcon.className = photo.is_nsfw ? 'nsfw-indicator active' : 'nsfw-indicator';
+        nsfwIcon.innerHTML = photo.is_nsfw ? '<i class="bi bi-person-fill-lock"></i>' : '<i class="bi bi-person-lock"></i>';
+        nsfwIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent opening the modal
+            this.togglePhotoNsfw(photo);
+        });
+        photoDiv.appendChild(nsfwIcon);
 
         photoDiv.appendChild(img);
 
@@ -952,6 +956,34 @@ class PhotoCatalogApp {
             button.innerHTML = type === 'favorite' 
                 ? (!value ? '<i class="bi bi-star-fill"></i> Remove Favorite' : '<i class="bi bi-star"></i> Add Favorite')
                 : (!value ? '<i class="bi bi-person-fill-lock"></i> Remove NSFW' : '<i class="bi bi-person-lock"></i> Mark NSFW');
+        }
+    }
+
+    async togglePhotoFavorite(photo) {
+        try {
+            const newValue = !photo.is_favorite;
+            await window.electronAPI.updateUserMetadata(photo.id, { isFavorite: newValue });
+            
+            // Update the photo object and re-render
+            photo.is_favorite = newValue ? 1 : 0;
+            this.renderGallery();
+            
+        } catch (error) {
+            console.error('Error toggling favorite:', error);
+        }
+    }
+
+    async togglePhotoNsfw(photo) {
+        try {
+            const newValue = !photo.is_nsfw;
+            await window.electronAPI.updateUserMetadata(photo.id, { isNsfw: newValue });
+            
+            // Update the photo object and re-render
+            photo.is_nsfw = newValue ? 1 : 0;
+            this.renderGallery();
+            
+        } catch (error) {
+            console.error('Error toggling NSFW:', error);
         }
     }
 
