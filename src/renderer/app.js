@@ -373,10 +373,19 @@ class PhotoCatalogApp {
         this.favoritesOnly = !this.favoritesOnly;
         const button = document.getElementById('favoritesFilter');
         button.classList.toggle('active', this.favoritesOnly);
+        
+        // Force a complete reset when toggling off
+        if (!this.favoritesOnly) {
+            delete this.currentFilters.isFavorite;
+            this.currentPage = 1;
+            this.currentOffset = 0;
+        }
+        
         this.applyFilters();
     }
 
     applyFilters() {
+        // Start fresh
         this.currentFilters = {
             sortBy: document.getElementById('sortBy').value,
             sortOrder: document.getElementById('sortOrder').value
@@ -388,12 +397,11 @@ class PhotoCatalogApp {
         if (startDate) this.currentFilters.startDate = startDate;
         if (endDate) this.currentFilters.endDate = endDate;
         
+        // Only add favorite filter if it's actually on
         if (this.favoritesOnly) {
             this.currentFilters.isFavorite = true;
-        } else {
-            // Explicitly remove the filter when favorites is turned off
-            delete this.currentFilters.isFavorite;
         }
+        // Don't add isFavorite to filters if favoritesOnly is false
 
         console.log('Applying filters:', this.currentFilters);
         this.loadPhotos(true);
