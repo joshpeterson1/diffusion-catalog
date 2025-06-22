@@ -419,15 +419,15 @@ body {
 .favorite-indicator.list-view {
     position: absolute;
     top: 8px;
-    left: 8px;
-    right: auto;
+    right: 80px;
+    left: auto;
 }
 
 .nsfw-indicator.list-view {
     position: absolute;
     top: 32px;
-    left: 8px;
-    right: auto;
+    right: 80px;
+    left: auto;
 }
 
 .pagination-container {
