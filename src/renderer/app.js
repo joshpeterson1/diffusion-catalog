@@ -442,7 +442,7 @@ class PhotoCatalogApp {
             // Show negative prompt if found
             if (parsedParams.negativePrompt) {
                 aiContent += '<div><strong>Negative Prompt:</strong></div>';
-                aiContent += `<div style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4;">${parsedParams.negativePrompt}</div>`;
+                aiContent += `<div class="clickable-text" data-copy="${parsedParams.negativePrompt}" style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4; cursor: pointer;">${parsedParams.negativePrompt}</div>`;
             }
             
             // Show generation parameters if found
@@ -549,9 +549,8 @@ class PhotoCatalogApp {
             return;
         }
 
+        // Only save custom tags, rating, and notes (favorite/nsfw are saved instantly)
         const metadata = {
-            isFavorite: document.getElementById('favoriteToggle').classList.contains('active'),
-            isNsfw: document.getElementById('nsfwToggle').classList.contains('active'),
             customTags: customTags || null,
             rating: rating || null,
             notes: notes || null
@@ -566,20 +565,13 @@ class PhotoCatalogApp {
 
             await window.electronAPI.updateUserMetadata(this.currentPhoto.id, metadata);
             
-            // Update the photo in our local array with the correct field names
+            // Update the photo in our local array
             const photoIndex = this.photos.findIndex(p => p.id === this.currentPhoto.id);
             if (photoIndex !== -1) {
-                this.photos[photoIndex].is_favorite = metadata.isFavorite ? 1 : 0;
-                this.photos[photoIndex].is_nsfw = metadata.isNsfw ? 1 : 0;
                 this.photos[photoIndex].custom_tags = metadata.customTags;
                 this.photos[photoIndex].rating = metadata.rating;
                 this.photos[photoIndex].notes = metadata.notes;
-                this.renderGallery(); // Re-render to show favorite star
             }
-            
-            // Also update the current photo object
-            this.currentPhoto.is_favorite = metadata.isFavorite ? 1 : 0;
-            this.currentPhoto.is_nsfw = metadata.isNsfw ? 1 : 0;
 
             // Show success feedback
             saveBtn.textContent = 'Saved!';
@@ -939,16 +931,59 @@ class PhotoCatalogApp {
         });
     }
 
-    toggleModalFavorite() {
+    async toggleModalFavorite() {
         const button = document.getElementById('favoriteToggle');
         const isActive = button.classList.toggle('active');
         button.textContent = isActive ? 'Remove Favorite' : 'Add Favorite';
+        
+        // Save immediately
+        await this.saveInstantMetadata('favorite', isActive);
     }
 
-    toggleModalNsfw() {
+    async toggleModalNsfw() {
         const button = document.getElementById('nsfwToggle');
         const isActive = button.classList.toggle('active');
         button.textContent = isActive ? 'Remove NSFW' : 'Mark NSFW';
+        
+        // Save immediately
+        await this.saveInstantMetadata('nsfw', isActive);
+    }
+
+    async saveInstantMetadata(type, value) {
+        if (!this.currentPhoto) return;
+
+        try {
+            const metadata = {};
+            if (type === 'favorite') {
+                metadata.isFavorite = value;
+            } else if (type === 'nsfw') {
+                metadata.isNsfw = value;
+            }
+
+            await window.electronAPI.updateUserMetadata(this.currentPhoto.id, metadata);
+            
+            // Update the photo in our local array
+            const photoIndex = this.photos.findIndex(p => p.id === this.currentPhoto.id);
+            if (photoIndex !== -1) {
+                if (type === 'favorite') {
+                    this.photos[photoIndex].is_favorite = value ? 1 : 0;
+                    this.currentPhoto.is_favorite = value ? 1 : 0;
+                } else if (type === 'nsfw') {
+                    this.photos[photoIndex].is_nsfw = value ? 1 : 0;
+                    this.currentPhoto.is_nsfw = value ? 1 : 0;
+                }
+                this.renderGallery(); // Re-render to show updated indicators
+            }
+            
+        } catch (error) {
+            console.error(`Error saving ${type} metadata:`, error);
+            // Revert the button state on error
+            const button = document.getElementById(type === 'favorite' ? 'favoriteToggle' : 'nsfwToggle');
+            button.classList.toggle('active', !value);
+            button.textContent = type === 'favorite' 
+                ? (!value ? 'Remove Favorite' : 'Add Favorite')
+                : (!value ? 'Remove NSFW' : 'Mark NSFW');
+        }
     }
 
     formatFileSize(bytes) {
