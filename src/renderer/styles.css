@@ -224,7 +224,6 @@ body {
     gap: 50px;
     align-content: start;
     justify-content: center;
-    max-height: calc(100vh - 200px);
 }
 
 .gallery-list {
