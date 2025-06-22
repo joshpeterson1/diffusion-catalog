@@ -98,8 +98,17 @@ class MetadataExtractor {
       
       // Extract AI metadata if present
       const aiMetadata = this.extractAiMetadata(exifData, filePath);
-      if (aiMetadata) {
-        await this.database.addAiMetadata(imageId, aiMetadata);
+      if (aiMetadata || exifData) {
+        // Always store raw EXIF data if available, even if no AI metadata is parsed
+        const aiDataToStore = aiMetadata || {};
+        
+        // Add raw EXIF data, filtering out large binary data to save space
+        if (exifData) {
+          const filteredExifData = this.filterExifData(exifData);
+          aiDataToStore.rawExifData = JSON.stringify(filteredExifData);
+        }
+        
+        await this.database.addAiMetadata(imageId, aiDataToStore);
       }
       
     } catch (error) {
@@ -253,6 +262,40 @@ class MetadataExtractor {
     }
     
     return Object.keys(aiData).length > 0 ? aiData : null;
+  }
+
+  filterExifData(exifData) {
+    // Create a filtered copy of EXIF data, excluding large binary fields
+    const filtered = {};
+    const excludeFields = [
+      'thumbnail', 'Thumbnail', 'ThumbnailImage',
+      'PreviewImage', 'JpgFromRaw', 'OtherImage',
+      'ICC_Profile', 'ColorSpace', 'WhitePoint',
+      'PrimaryChromaticities', 'YCbCrCoefficients',
+      'ReferenceBlackWhite', 'PrintIM'
+    ];
+    
+    for (const [key, value] of Object.entries(exifData)) {
+      // Skip large binary data and thumbnail images
+      if (excludeFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+        continue;
+      }
+      
+      // Skip very large values (likely binary data)
+      if (typeof value === 'string' && value.length > 10000) {
+        continue;
+      }
+      
+      // Skip Buffer objects
+      if (Buffer.isBuffer(value)) {
+        continue;
+      }
+      
+      // Include the field
+      filtered[key] = value;
+    }
+    
+    return filtered;
   }
 
   parseAiText(text) {

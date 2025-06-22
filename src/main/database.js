@@ -75,9 +75,17 @@ class DatabaseManager {
         seed INTEGER,
         sampler TEXT,
         scheduler TEXT,
+        raw_exif_data TEXT,
         FOREIGN KEY (image_id) REFERENCES images (id) ON DELETE CASCADE
       )
     `);
+
+    // Add raw_exif_data column if it doesn't exist (for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE ai_metadata ADD COLUMN raw_exif_data TEXT`);
+    } catch (error) {
+      // Column already exists, ignore
+    }
 
     // Watch directories
     this.db.exec(`
@@ -323,8 +331,8 @@ class DatabaseManager {
   async addAiMetadata(imageId, aiData) {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO ai_metadata 
-      (image_id, prompt, negative_prompt, model, steps, cfg_scale, seed, sampler, scheduler)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (image_id, prompt, negative_prompt, model, steps, cfg_scale, seed, sampler, scheduler, raw_exif_data)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     return stmt.run(
@@ -336,7 +344,8 @@ class DatabaseManager {
       aiData.cfgScale,
       aiData.seed,
       aiData.sampler,
-      aiData.scheduler
+      aiData.scheduler,
+      aiData.rawExifData
     );
   }
 
