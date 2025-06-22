@@ -722,7 +722,7 @@ class PhotoCatalogApp {
                 this.showLoading(true);
                 const result = await window.electronAPI.addWatchDirectory(dirPath);
                 if (result.success) {
-                    alert('Directory added successfully! Scanning for images...');
+                    alert(result.message);
                     // Reload subfolders and photos
                     await this.loadSubfolders();
                     await this.loadPhotos(true);
@@ -732,7 +732,7 @@ class PhotoCatalogApp {
             }
         } catch (error) {
             console.error('Error adding directory:', error);
-            alert('Failed to add directory');
+            alert('Failed to add directory or ZIP file');
         } finally {
             this.showLoading(false);
         }

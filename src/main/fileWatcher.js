@@ -15,39 +15,55 @@ class FileWatcher {
 
   async addDirectory(dirPath) {
     if (this.watchers.has(dirPath)) {
-      return { success: false, message: 'Directory already being watched' };
+      return { success: false, message: 'Path already being watched' };
     }
 
     try {
-      // Verify directory exists
+      // Verify path exists
       await fs.access(dirPath);
       
-      // Scan existing files first
-      console.log(`Scanning existing files in ${dirPath}...`);
-      const fileCount = await this.scanExistingFiles(dirPath);
-      console.log(`Found ${fileCount} image files`);
+      const stats = await fs.stat(dirPath);
+      let fileCount = 0;
       
-      // Create watcher
-      const watcher = chokidar.watch(dirPath, {
-        ignored: /(^|[\/\\])\../, // ignore dotfiles
-        persistent: true,
-        ignoreInitial: true // We already scanned, so ignore initial events
-      });
+      if (stats.isDirectory()) {
+        // Handle directory
+        console.log(`Scanning existing files in directory ${dirPath}...`);
+        fileCount = await this.scanExistingFiles(dirPath);
+        console.log(`Found ${fileCount} files`);
+        
+        // Create watcher for directory
+        const watcher = chokidar.watch(dirPath, {
+          ignored: /(^|[\/\\])\../, // ignore dotfiles
+          persistent: true,
+          ignoreInitial: true // We already scanned, so ignore initial events
+        });
 
-      // Set up event handlers
-      watcher
-        .on('add', (filePath) => this.handleFileAdded(filePath))
-        .on('unlink', (filePath) => this.handleFileRemoved(filePath))
-        .on('error', (error) => console.error('Watcher error:', error));
+        // Set up event handlers
+        watcher
+          .on('add', (filePath) => this.handleFileAdded(filePath))
+          .on('unlink', (filePath) => this.handleFileRemoved(filePath))
+          .on('error', (error) => console.error('Watcher error:', error));
 
-      this.watchers.set(dirPath, watcher);
+        this.watchers.set(dirPath, watcher);
+      } else if (stats.isFile() && path.extname(dirPath).toLowerCase() === '.zip') {
+        // Handle single ZIP file
+        console.log(`Processing single ZIP file: ${dirPath}`);
+        await this.handleArchiveFile(dirPath);
+        fileCount = 1;
+        
+        // For ZIP files, we don't need a watcher since they don't change
+        this.watchers.set(dirPath, null);
+      } else {
+        return { success: false, message: 'Selected path must be a directory or ZIP file' };
+      }
       
       return { 
         success: true, 
-        message: `Directory added successfully. Found ${fileCount} images.` 
+        message: `Path added successfully. Found ${fileCount} files.` 
       };
     } catch (error) {
-      return { success: false, message: `Failed to add directory: ${error.message}` };
+      console.error('Error adding directory/file:', error);
+      return { success: false, message: `Failed to add path: ${error.message}` };
     }
   }
 
@@ -108,16 +124,20 @@ class FileWatcher {
     try {
       console.log(`Processing ZIP archive: ${filePath}`);
       const images = await this.extractImageListFromZip(filePath);
+      console.log(`ZIP contains ${images.length} image entries`);
       
+      let addedCount = 0;
       for (const imageInfo of images) {
         const archiveImagePath = `${filePath}::${imageInfo.entryName}`;
         
         // Check if this archive entry already exists
         const existing = this.database.db.prepare('SELECT id FROM images WHERE path = ?').get(archiveImagePath);
         if (existing) {
+          console.log(`Skipping existing entry: ${imageInfo.entryName}`);
           continue;
         }
 
+        console.log(`Adding ZIP entry: ${imageInfo.entryName}`);
         const imageId = await this.database.addImage({
           path: archiveImagePath,
           filename: imageInfo.filename,
@@ -132,11 +152,13 @@ class FileWatcher {
 
         // Queue for metadata extraction
         this.metadataExtractor.queueImage(imageId, archiveImagePath);
+        addedCount++;
       }
       
-      console.log(`Found ${images.length} images in ZIP: ${path.basename(filePath)}`);
+      console.log(`Added ${addedCount} new images from ZIP: ${path.basename(filePath)}`);
     } catch (error) {
       console.error('Error handling archive file:', error);
+      throw error;
     }
   }
 
@@ -144,15 +166,22 @@ class FileWatcher {
     return new Promise((resolve, reject) => {
       const images = [];
       
+      console.log(`Opening ZIP file: ${zipPath}`);
       yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
-        if (err) return reject(err);
+        if (err) {
+          console.error('Error opening ZIP file:', err);
+          return reject(err);
+        }
         
+        console.log('ZIP file opened successfully, reading entries...');
         zipfile.readEntry();
         
         zipfile.on('entry', (entry) => {
+          console.log(`ZIP entry: ${entry.fileName}`);
           const entryExt = path.extname(entry.fileName).toLowerCase();
           
           if (this.supportedExtensions.has(entryExt) && !entry.fileName.endsWith('/')) {
+            console.log(`Found image: ${entry.fileName}`);
             images.push({
               entryName: entry.fileName,
               filename: path.basename(entry.fileName),
@@ -164,10 +193,14 @@ class FileWatcher {
         });
         
         zipfile.on('end', () => {
+          console.log(`ZIP scan complete. Found ${images.length} images.`);
           resolve(images);
         });
         
-        zipfile.on('error', reject);
+        zipfile.on('error', (err) => {
+          console.error('ZIP file error:', err);
+          reject(err);
+        });
       });
     });
   }

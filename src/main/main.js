@@ -295,8 +295,13 @@ class PhotoCatalogApp {
     // Add directory dialog handler
     ipcMain.handle('open-directory-dialog', async () => {
       const result = await dialog.showOpenDialog(this.mainWindow, {
-        properties: ['openDirectory'],
-        title: 'Select Directory to Watch'
+        properties: ['openDirectory', 'openFile'],
+        filters: [
+          { name: 'All Supported', extensions: ['zip'] },
+          { name: 'ZIP Archives', extensions: ['zip'] },
+          { name: 'All Files', extensions: ['*'] }
+        ],
+        title: 'Select Directory or ZIP Archive to Watch'
       });
       
       if (!result.canceled && result.filePaths.length > 0) {

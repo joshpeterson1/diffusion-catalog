@@ -37,6 +37,19 @@ class DatabaseManager {
       )
     `);
 
+    // Add new columns if they don't exist (for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE images ADD COLUMN is_archive BOOLEAN DEFAULT FALSE`);
+    } catch (error) {
+      // Column already exists, ignore
+    }
+    
+    try {
+      this.db.exec(`ALTER TABLE images ADD COLUMN archive_path TEXT`);
+    } catch (error) {
+      // Column already exists, ignore
+    }
+
     // User annotations
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS user_metadata (
