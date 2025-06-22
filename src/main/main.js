@@ -62,22 +62,6 @@ class PhotoCatalogApp {
           },
           { type: 'separator' },
           {
-            label: 'New',
-            accelerator: 'CmdOrCtrl+N',
-            role: 'new'
-          },
-          {
-            label: 'Open',
-            accelerator: 'CmdOrCtrl+O',
-            role: 'open'
-          },
-          { type: 'separator' },
-          {
-            label: 'Close',
-            accelerator: 'CmdOrCtrl+W',
-            role: 'close'
-          },
-          {
             label: 'Exit',
             accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
             role: 'quit'
@@ -87,32 +71,6 @@ class PhotoCatalogApp {
       {
         label: 'Edit',
         submenu: [
-          {
-            label: 'Undo',
-            accelerator: 'CmdOrCtrl+Z',
-            role: 'undo'
-          },
-          {
-            label: 'Redo',
-            accelerator: 'Shift+CmdOrCtrl+Z',
-            role: 'redo'
-          },
-          { type: 'separator' },
-          {
-            label: 'Cut',
-            accelerator: 'CmdOrCtrl+X',
-            role: 'cut'
-          },
-          {
-            label: 'Copy',
-            accelerator: 'CmdOrCtrl+C',
-            role: 'copy'
-          },
-          {
-            label: 'Paste',
-            accelerator: 'CmdOrCtrl+V',
-            role: 'paste'
-          },
           {
             label: 'Select All',
             accelerator: 'CmdOrCtrl+A',
@@ -137,22 +95,6 @@ class PhotoCatalogApp {
             label: 'Toggle Developer Tools',
             accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
             role: 'toggleDevTools'
-          },
-          { type: 'separator' },
-          {
-            label: 'Actual Size',
-            accelerator: 'CmdOrCtrl+0',
-            role: 'resetZoom'
-          },
-          {
-            label: 'Zoom In',
-            accelerator: 'CmdOrCtrl+Plus',
-            role: 'zoomIn'
-          },
-          {
-            label: 'Zoom Out',
-            accelerator: 'CmdOrCtrl+-',
-            role: 'zoomOut'
           },
           { type: 'separator' },
           {
