@@ -44,6 +44,17 @@ body {
     background-color: #3a3a3a;
     color: #ffffff;
     width: 300px;
+    font-size: 14px;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #007acc;
+    background-color: #4a4a4a;
+}
+
+.search-container input::placeholder {
+    color: #888;
 }
 
 .search-container button,
