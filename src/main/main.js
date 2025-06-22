@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const DatabaseManager = require('./database');
 const FileWatcher = require('./fileWatcher');
@@ -74,6 +74,19 @@ class PhotoCatalogApp {
     // Get photo metadata
     ipcMain.handle('get-photo-metadata', async (event, imageId) => {
       return await this.database.getPhotoMetadata(imageId);
+    });
+
+    // Add directory dialog handler
+    ipcMain.handle('open-directory-dialog', async () => {
+      const result = await dialog.showOpenDialog(this.mainWindow, {
+        properties: ['openDirectory'],
+        title: 'Select Directory to Watch'
+      });
+      
+      if (!result.canceled && result.filePaths.length > 0) {
+        return result.filePaths[0];
+      }
+      return null;
     });
   }
 }

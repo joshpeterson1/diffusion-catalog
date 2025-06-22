@@ -19,11 +19,16 @@ class FileWatcher {
       // Verify directory exists
       await fs.access(dirPath);
       
+      // Scan existing files first
+      console.log(`Scanning existing files in ${dirPath}...`);
+      const fileCount = await this.scanExistingFiles(dirPath);
+      console.log(`Found ${fileCount} image files`);
+      
       // Create watcher
       const watcher = chokidar.watch(dirPath, {
         ignored: /(^|[\/\\])\../, // ignore dotfiles
         persistent: true,
-        ignoreInitial: false
+        ignoreInitial: true // We already scanned, so ignore initial events
       });
 
       // Set up event handlers
@@ -34,7 +39,10 @@ class FileWatcher {
 
       this.watchers.set(dirPath, watcher);
       
-      return { success: true, message: 'Directory added successfully' };
+      return { 
+        success: true, 
+        message: `Directory added successfully. Found ${fileCount} images.` 
+      };
     } catch (error) {
       return { success: false, message: `Failed to add directory: ${error.message}` };
     }

@@ -264,22 +264,24 @@ class PhotoCatalogApp {
     }
 
     async addDirectory() {
-        // This would typically open a directory picker dialog
-        // For now, we'll use a simple prompt
-        const dirPath = prompt('Enter directory path to watch:');
-        if (dirPath) {
-            try {
+        try {
+            const dirPath = await window.electronAPI.openDirectoryDialog();
+            if (dirPath) {
+                this.showLoading(true);
                 const result = await window.electronAPI.addWatchDirectory(dirPath);
                 if (result.success) {
-                    alert('Directory added successfully!');
-                    this.loadPhotos(true);
+                    alert('Directory added successfully! Scanning for images...');
+                    // Trigger a scan of existing files
+                    await this.loadPhotos(true);
                 } else {
                     alert(`Error: ${result.message}`);
                 }
-            } catch (error) {
-                console.error('Error adding directory:', error);
-                alert('Failed to add directory');
             }
+        } catch (error) {
+            console.error('Error adding directory:', error);
+            alert('Failed to add directory');
+        } finally {
+            this.showLoading(false);
         }
     }
 
