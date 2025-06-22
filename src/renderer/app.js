@@ -27,11 +27,11 @@ class PhotoCatalogApp {
             if (e.key === 'Enter') this.handleSearch();
         });
 
-        // Directory management
-        document.getElementById('addDirectoryBtn').addEventListener('click', () => this.addDirectory());
-        document.getElementById('clearDbBtn').addEventListener('click', () => this.clearDatabase());
-        document.getElementById('debugDbBtn').addEventListener('click', () => this.debugDatabase());
-        document.getElementById('viewDbBtn').addEventListener('click', () => this.viewDatabase());
+        // Menu event listeners
+        window.electronAPI.onMenuAddDirectory(() => this.addDirectory());
+        window.electronAPI.onMenuClearDb(() => this.clearDatabase());
+        window.electronAPI.onMenuDebugDb(() => this.debugDatabase());
+        window.electronAPI.onMenuViewDb(() => this.viewDatabase());
 
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));

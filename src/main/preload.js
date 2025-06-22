@@ -31,5 +31,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getRawExifData: (filePath) => ipcRenderer.invoke('get-raw-exif-data', filePath),
   
   // File operations
-  openInDirectory: (filePath) => ipcRenderer.invoke('open-in-directory', filePath)
+  openInDirectory: (filePath) => ipcRenderer.invoke('open-in-directory', filePath),
+  
+  // Menu events
+  onMenuAddDirectory: (callback) => ipcRenderer.on('menu-add-directory', callback),
+  onMenuClearDb: (callback) => ipcRenderer.on('menu-clear-db', callback),
+  onMenuDebugDb: (callback) => ipcRenderer.on('menu-debug-db', callback),
+  onMenuViewDb: (callback) => ipcRenderer.on('menu-view-db', callback)
 });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const DatabaseManager = require('./database');
 const FileWatcher = require('./fileWatcher');
@@ -43,6 +43,56 @@ class PhotoCatalogApp {
     if (process.argv.includes('--dev')) {
       this.mainWindow.webContents.openDevTools();
     }
+
+    // Set up application menu
+    this.createMenu();
+  }
+
+  createMenu() {
+    const template = [
+      {
+        label: 'File',
+        submenu: [
+          {
+            label: 'Add Directory',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-add-directory');
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Exit',
+            role: 'quit'
+          }
+        ]
+      },
+      {
+        label: 'Debug',
+        submenu: [
+          {
+            label: 'Clear Database',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-clear-db');
+            }
+          },
+          {
+            label: 'Debug Database',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-debug-db');
+            }
+          },
+          {
+            label: 'View Database',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-view-db');
+            }
+          }
+        ]
+      }
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
   }
 
   setupIpcHandlers() {
