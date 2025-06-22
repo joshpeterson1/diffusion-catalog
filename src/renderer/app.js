@@ -415,7 +415,7 @@ class PhotoCatalogApp {
             <div><strong>Size:</strong> ${this.formatFileSize(metadata.file_size)}</div>
             <div><strong>Dimensions:</strong> ${metadata.width} × ${metadata.height}</div>
             <div><strong>Date Created:</strong> ${metadata.date_taken ? new Date(metadata.date_taken).toLocaleString() : 'Unknown'}</div>
-            <div><strong>Path:</strong> <span class="clickable-text" data-copy="${metadata.path}">${metadata.path}</span></div>
+            <div><strong>Path:</strong> <span class="clickable-text" data-copy="${metadata.path}" style="word-break: break-all; overflow-wrap: break-word;">${metadata.path}</span></div>
         `;
 
         // AI info - show specific EXIF data

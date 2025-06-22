@@ -486,6 +486,9 @@ body {
 .metadata-section div {
     margin-bottom: 8px;
     font-size: 13px;
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
 }
 
 .metadata-section label {
