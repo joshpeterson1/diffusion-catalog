@@ -118,14 +118,14 @@ class DatabaseManager {
     const {
       limit = 200,
       offset = 0,
-      startDate,
-      endDate,
+      selectedFolders = [],
       sortBy = 'date_taken',
       sortOrder = 'DESC',
       isFavorite
     } = options;
 
     console.log('isFavorite value:', isFavorite, 'type:', typeof isFavorite);
+    console.log('selectedFolders:', selectedFolders);
 
     let query, params = [];
 
@@ -157,16 +157,14 @@ class DatabaseManager {
       `;
     }
     
-    if (startDate) {
-      query += ' AND i.date_taken >= ?';
-      params.push(startDate);
-      console.log('Added startDate filter:', startDate);
-    }
-    
-    if (endDate) {
-      query += ' AND i.date_taken <= ?';
-      params.push(endDate);
-      console.log('Added endDate filter:', endDate);
+    // Filter by selected folders if any are specified
+    if (selectedFolders && selectedFolders.length > 0) {
+      const folderConditions = selectedFolders.map(() => 'i.path LIKE ?').join(' OR ');
+      query += ` AND (${folderConditions})`;
+      selectedFolders.forEach(folder => {
+        params.push(`${folder}%`);
+      });
+      console.log('Added folder filters for:', selectedFolders);
     }
 
     if (options.excludeNsfw) {
@@ -315,6 +313,39 @@ class DatabaseManager {
       return { success: true, message: 'Database cleared successfully' };
     } catch (error) {
       return { success: false, message: error.message };
+    }
+  }
+
+  async getSubfolders() {
+    try {
+      // Get all unique directory paths from images
+      const stmt = this.db.prepare(`
+        SELECT DISTINCT 
+          SUBSTR(path, 1, LENGTH(path) - LENGTH(filename) - 1) as folder_path,
+          COUNT(*) as image_count
+        FROM images 
+        GROUP BY folder_path
+        ORDER BY folder_path
+      `);
+      
+      const folders = stmt.all();
+      
+      // Process folders to extract meaningful subfolder names
+      const subfolders = folders.map(folder => {
+        const parts = folder.folder_path.split(/[\/\\]/);
+        const folderName = parts[parts.length - 1] || parts[parts.length - 2];
+        
+        return {
+          name: folderName,
+          path: folder.folder_path,
+          imageCount: folder.image_count
+        };
+      }).filter(folder => folder.name && folder.name.trim() !== '');
+      
+      return subfolders;
+    } catch (error) {
+      console.error('Error getting subfolders:', error);
+      return [];
     }
   }
 

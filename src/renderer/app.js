@@ -12,10 +12,11 @@ class PhotoCatalogApp {
         this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25 };
         this.currentPhotoIndex = -1;
         this.includeNsfw = false;
+        this.selectedFolders = [];
         
         this.initializeEventListeners();
-        this.setDefaultDateRange();
         this.calculateGridDimensions();
+        this.loadSubfolders();
         this.loadPhotos();
     }
 
@@ -38,8 +39,6 @@ class PhotoCatalogApp {
         // Filters
         document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
         document.getElementById('nsfwFilter').addEventListener('change', () => this.toggleNsfw());
-        document.getElementById('startDate').addEventListener('change', () => this.refreshPhotos());
-        document.getElementById('endDate').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('sortOrder').addEventListener('change', () => this.refreshPhotos());
 
@@ -75,10 +74,58 @@ class PhotoCatalogApp {
         });
     }
 
-    setDefaultDateRange() {
-        // Don't set any default date range - show all photos by default
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
+    async loadSubfolders() {
+        try {
+            const subfolders = await window.electronAPI.getSubfolders();
+            this.renderFolderList(subfolders);
+        } catch (error) {
+            console.error('Error loading subfolders:', error);
+        }
+    }
+
+    renderFolderList(subfolders) {
+        const folderList = document.getElementById('folderList');
+        
+        if (!subfolders || subfolders.length === 0) {
+            folderList.innerHTML = '<div class="no-folders">No folders found</div>';
+            return;
+        }
+
+        folderList.innerHTML = '';
+        
+        subfolders.forEach(folder => {
+            const folderItem = document.createElement('div');
+            folderItem.className = 'folder-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `folder-${folder.path}`;
+            checkbox.checked = this.selectedFolders.includes(folder.path);
+            checkbox.addEventListener('change', () => this.toggleFolder(folder.path));
+            
+            const label = document.createElement('label');
+            label.htmlFor = `folder-${folder.path}`;
+            label.innerHTML = `
+                <span class="folder-name">${folder.name}</span>
+                <span class="folder-count">(${folder.imageCount})</span>
+            `;
+            
+            folderItem.appendChild(checkbox);
+            folderItem.appendChild(label);
+            folderList.appendChild(folderItem);
+        });
+    }
+
+    toggleFolder(folderPath) {
+        const index = this.selectedFolders.indexOf(folderPath);
+        if (index === -1) {
+            this.selectedFolders.push(folderPath);
+        } else {
+            this.selectedFolders.splice(index, 1);
+        }
+        
+        console.log('Selected folders:', this.selectedFolders);
+        this.refreshPhotos();
     }
 
     calculateGridDimensions() {
@@ -478,15 +525,12 @@ class PhotoCatalogApp {
             sortOrder: document.getElementById('sortOrder').value
         };
 
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        
-        // Only add date filters if they're actually set and valid
-        if (startDate && startDate.trim() !== '' && this.isValidDate(startDate)) {
-            filters.startDate = startDate;
-        }
-        if (endDate && endDate.trim() !== '' && this.isValidDate(endDate)) {
-            filters.endDate = endDate;
+        // Add selected folders filter
+        if (this.selectedFolders.length > 0) {
+            filters.selectedFolders = this.selectedFolders;
+            console.log('ADDING FOLDER FILTERS:', this.selectedFolders);
+        } else {
+            console.log('NO FOLDERS SELECTED - SHOWING ALL PHOTOS');
         }
         
         // Add favorites filter only if enabled
@@ -535,7 +579,8 @@ class PhotoCatalogApp {
                 const result = await window.electronAPI.addWatchDirectory(dirPath);
                 if (result.success) {
                     alert('Directory added successfully! Scanning for images...');
-                    // Trigger a scan of existing files
+                    // Reload subfolders and photos
+                    await this.loadSubfolders();
                     await this.loadPhotos(true);
                 } else {
                     alert(`Error: ${result.message}`);
@@ -550,13 +595,17 @@ class PhotoCatalogApp {
     }
 
     updatePhotoCount() {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const dateRangeText = startDate && endDate ? 
-            `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}` : 
-            'All dates';
+        let filterText = 'All folders';
+        if (this.selectedFolders.length > 0) {
+            if (this.selectedFolders.length === 1) {
+                const folderName = this.selectedFolders[0].split(/[\/\\]/).pop();
+                filterText = `Folder: ${folderName}`;
+            } else {
+                filterText = `${this.selectedFolders.length} folders selected`;
+            }
+        }
         
-        document.getElementById('photoCount').textContent = `${this.totalPhotosInRange} photos in range (${dateRangeText})`;
+        document.getElementById('photoCount').textContent = `${this.totalPhotosInRange} photos (${filterText})`;
     }
 
     updatePaginationControls() {

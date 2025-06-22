@@ -98,6 +98,11 @@ class PhotoCatalogApp {
     ipcMain.handle('debug-database', async () => {
       return await this.database.debugInfo();
     });
+
+    // Get subfolders handler
+    ipcMain.handle('get-subfolders', async () => {
+      return await this.database.getSubfolders();
+    });
   }
 }
 

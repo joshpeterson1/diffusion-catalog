@@ -144,6 +144,51 @@ body {
     background-color: #007acc;
 }
 
+.folder-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.folder-item:hover {
+    background-color: #3a3a3a;
+}
+
+.folder-item input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+}
+
+.folder-item label {
+    flex: 1;
+    margin: 0;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.folder-name {
+    flex: 1;
+}
+
+.folder-count {
+    color: #888;
+    font-size: 11px;
+}
+
+.no-folders {
+    color: #888;
+    font-size: 12px;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+}
+
 .gallery-container {
     flex: 1;
     display: flex;

@@ -22,5 +22,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Debug functions
   clearDatabase: () => ipcRenderer.invoke('clear-database'),
-  debugDatabase: () => ipcRenderer.invoke('debug-database')
+  debugDatabase: () => ipcRenderer.invoke('debug-database'),
+  
+  // Folder operations
+  getSubfolders: () => ipcRenderer.invoke('get-subfolders')
 });
