@@ -88,6 +88,16 @@ class PhotoCatalogApp {
       }
       return null;
     });
+
+    // Clear database handler
+    ipcMain.handle('clear-database', async () => {
+      return await this.database.clearAll();
+    });
+
+    // Debug database handler
+    ipcMain.handle('debug-database', async () => {
+      return await this.database.debugInfo();
+    });
   }
 }
 

@@ -26,6 +26,8 @@ class PhotoCatalogApp {
 
         // Directory management
         document.getElementById('addDirectoryBtn').addEventListener('click', () => this.addDirectory());
+        document.getElementById('clearDbBtn').addEventListener('click', () => this.clearDatabase());
+        document.getElementById('debugDbBtn').addEventListener('click', () => this.debugDatabase());
 
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
@@ -467,6 +469,33 @@ class PhotoCatalogApp {
 
     showLoading(show) {
         document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+    }
+
+    async clearDatabase() {
+        if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+            try {
+                const result = await window.electronAPI.clearDatabase();
+                if (result.success) {
+                    alert('Database cleared successfully');
+                    this.refreshPhotos();
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error clearing database:', error);
+                alert('Failed to clear database');
+            }
+        }
+    }
+
+    async debugDatabase() {
+        try {
+            const debug = await window.electronAPI.debugDatabase();
+            console.log('Database debug info:', debug);
+            alert(`Images: ${debug.imageCount}, User Meta: ${debug.userMetaCount}, Favorites: ${debug.favoriteCount}`);
+        } catch (error) {
+            console.error('Error getting debug info:', error);
+        }
     }
 
     formatFileSize(bytes) {

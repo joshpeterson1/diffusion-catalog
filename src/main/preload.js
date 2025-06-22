@@ -18,5 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Events
   onPhotosUpdated: (callback) => ipcRenderer.on('photos-updated', callback),
-  removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
+  removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
+  
+  // Debug functions
+  clearDatabase: () => ipcRenderer.invoke('clear-database'),
+  debugDatabase: () => ipcRenderer.invoke('debug-database')
 });

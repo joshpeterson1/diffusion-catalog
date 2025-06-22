@@ -149,7 +149,16 @@ class DatabaseManager {
     params.push(limit, offset);
     
     const stmt = this.db.prepare(query);
-    return stmt.all(...params);
+    const results = stmt.all(...params);
+    
+    console.log(`Query: ${query}`);
+    console.log(`Params: ${JSON.stringify(params)}`);
+    console.log(`Results: ${results.length} rows`);
+    if (results.length > 0) {
+      console.log('First result:', results[0]);
+    }
+    
+    return results;
   }
 
   async searchPhotos(searchQuery, filters = {}) {
@@ -238,6 +247,39 @@ class DatabaseManager {
     `);
     
     return stmt.get(imageId);
+  }
+
+  async clearAll() {
+    try {
+      this.db.exec('DELETE FROM user_metadata');
+      this.db.exec('DELETE FROM ai_metadata');
+      this.db.exec('DELETE FROM images');
+      this.db.exec('DELETE FROM watch_directories');
+      return { success: true, message: 'Database cleared successfully' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  async debugInfo() {
+    try {
+      const imageCount = this.db.prepare('SELECT COUNT(*) as count FROM images').get();
+      const userMetaCount = this.db.prepare('SELECT COUNT(*) as count FROM user_metadata').get();
+      const favoriteCount = this.db.prepare('SELECT COUNT(*) as count FROM user_metadata WHERE is_favorite = 1').get();
+      
+      const sampleImages = this.db.prepare('SELECT id, filename, date_taken FROM images LIMIT 5').all();
+      const sampleUserMeta = this.db.prepare('SELECT image_id, is_favorite, is_nsfw FROM user_metadata LIMIT 5').all();
+      
+      return {
+        imageCount: imageCount.count,
+        userMetaCount: userMetaCount.count,
+        favoriteCount: favoriteCount.count,
+        sampleImages,
+        sampleUserMeta
+      };
+    } catch (error) {
+      return { error: error.message };
+    }
   }
 
   close() {
