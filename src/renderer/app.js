@@ -70,11 +70,9 @@ class PhotoCatalogApp {
     }
 
     setDefaultDateRange() {
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-        
-        document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
-        document.getElementById('endDate').value = now.toISOString().split('T')[0];
+        // Don't set any default date range - show all photos by default
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
     }
 
     calculateGridDimensions() {
