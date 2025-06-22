@@ -141,7 +141,7 @@ class FileWatcher {
         const imageId = await this.database.addImage({
           path: archiveImagePath,
           filename: imageInfo.filename,
-          fileSize: imageInfo.uncompressedSize,
+          fileSize: imageInfo.uncompressedSize || 0,
           dateTaken: null,
           width: null,
           height: null,

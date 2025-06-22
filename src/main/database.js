@@ -111,14 +111,14 @@ class DatabaseManager {
       `);
       
       const result = stmt.run(
-        imageData.path,
-        imageData.filename,
-        imageData.dateTaken,
-        imageData.fileSize,
-        imageData.width,
-        imageData.height,
-        imageData.hash,
-        imageData.isArchive || false,
+        imageData.path || '',
+        imageData.filename || '',
+        imageData.dateTaken || null,
+        imageData.fileSize || 0,
+        imageData.width || null,
+        imageData.height || null,
+        imageData.hash || null,
+        imageData.isArchive ? 1 : 0,
         imageData.archivePath || null
       );
       
