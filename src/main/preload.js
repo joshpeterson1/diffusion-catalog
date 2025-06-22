@@ -41,11 +41,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuPreferences: (callback) => ipcRenderer.on('menu-preferences', callback),
   onMenuClearFavorites: (callback) => ipcRenderer.on('menu-clear-favorites', callback),
   onMenuClearNsfw: (callback) => ipcRenderer.on('menu-clear-nsfw', callback),
+  onMenuVitals: (callback) => ipcRenderer.on('menu-vitals', callback),
   
   // Clear operations
   clearAllFavorites: () => ipcRenderer.invoke('clear-all-favorites'),
   clearAllNsfw: () => ipcRenderer.invoke('clear-all-nsfw'),
   
   // Database viewer
-  getTableData: (tableName) => ipcRenderer.invoke('get-table-data', tableName)
+  getTableData: (tableName) => ipcRenderer.invoke('get-table-data', tableName),
+  
+  // Vitals
+  getVitals: () => ipcRenderer.invoke('get-vitals')
 });

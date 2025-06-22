@@ -11,6 +11,15 @@ class FileWatcher {
     this.watchers = new Map();
     this.supportedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.bmp']);
     this.supportedArchives = new Set(['.zip']);
+    this.vitals = {
+      lastScanStartTime: null,
+      lastScanEndTime: null,
+      lastScanDuration: null,
+      lastScanFileCount: 0,
+      totalScansPerformed: 0,
+      averageScanTime: 0,
+      totalScanTime: 0
+    };
   }
 
   async addDirectory(dirPath) {
@@ -19,6 +28,10 @@ class FileWatcher {
     }
 
     try {
+      // Start timing
+      const scanStartTime = Date.now();
+      this.vitals.lastScanStartTime = scanStartTime;
+      
       // Verify path exists
       await fs.access(dirPath);
       
@@ -57,9 +70,22 @@ class FileWatcher {
         return { success: false, message: 'Selected path must be a directory or ZIP file' };
       }
       
+      // End timing and update vitals
+      const scanEndTime = Date.now();
+      const scanDuration = scanEndTime - scanStartTime;
+      
+      this.vitals.lastScanEndTime = scanEndTime;
+      this.vitals.lastScanDuration = scanDuration;
+      this.vitals.lastScanFileCount = fileCount;
+      this.vitals.totalScansPerformed++;
+      this.vitals.totalScanTime += scanDuration;
+      this.vitals.averageScanTime = this.vitals.totalScanTime / this.vitals.totalScansPerformed;
+      
+      console.log(`Scan completed in ${scanDuration}ms for ${fileCount} files`);
+      
       return { 
         success: true, 
-        message: `Path added successfully. Found ${fileCount} files.` 
+        message: `Path added successfully. Found ${fileCount} files in ${scanDuration}ms.` 
       };
     } catch (error) {
       console.error('Error adding directory/file:', error);
@@ -237,6 +263,17 @@ class FileWatcher {
       console.error('Error scanning existing files:', error);
       return 0;
     }
+  }
+
+  getVitals() {
+    return {
+      ...this.vitals,
+      lastScanStartTime: this.vitals.lastScanStartTime ? new Date(this.vitals.lastScanStartTime).toISOString() : null,
+      lastScanEndTime: this.vitals.lastScanEndTime ? new Date(this.vitals.lastScanEndTime).toISOString() : null,
+      lastScanDurationFormatted: this.vitals.lastScanDuration ? `${this.vitals.lastScanDuration}ms` : null,
+      averageScanTimeFormatted: this.vitals.averageScanTime ? `${Math.round(this.vitals.averageScanTime)}ms` : null,
+      totalScanTimeFormatted: this.vitals.totalScanTime ? `${this.vitals.totalScanTime}ms` : null
+    };
   }
 
   close() {

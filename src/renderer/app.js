@@ -35,6 +35,7 @@ class PhotoCatalogApp {
         window.electronAPI.onMenuPreferences(() => this.openPreferences());
         window.electronAPI.onMenuClearFavorites(() => this.clearAllFavorites());
         window.electronAPI.onMenuClearNsfw(() => this.clearAllNsfw());
+        window.electronAPI.onMenuVitals(() => this.showVitals());
 
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
@@ -875,6 +876,42 @@ class PhotoCatalogApp {
                 console.error('Error clearing NSFW tags:', error);
                 alert('Failed to clear NSFW tags');
             }
+        }
+    }
+
+    async showVitals() {
+        try {
+            const vitals = await window.electronAPI.getVitals();
+            
+            let message = `System Vitals\n`;
+            message += `Generated: ${new Date(vitals.timestamp).toLocaleString()}\n\n`;
+            
+            message += `File Watcher Performance:\n`;
+            message += `• Total scans performed: ${vitals.fileWatcher.totalScansPerformed}\n`;
+            message += `• Last scan duration: ${vitals.fileWatcher.lastScanDurationFormatted || 'N/A'}\n`;
+            message += `• Last scan file count: ${vitals.fileWatcher.lastScanFileCount}\n`;
+            message += `• Average scan time: ${vitals.fileWatcher.averageScanTimeFormatted || 'N/A'}\n`;
+            message += `• Total scan time: ${vitals.fileWatcher.totalScanTimeFormatted || 'N/A'}\n`;
+            message += `• Last scan started: ${vitals.fileWatcher.lastScanStartTime ? new Date(vitals.fileWatcher.lastScanStartTime).toLocaleString() : 'N/A'}\n`;
+            message += `• Last scan ended: ${vitals.fileWatcher.lastScanEndTime ? new Date(vitals.fileWatcher.lastScanEndTime).toLocaleString() : 'N/A'}\n\n`;
+            
+            message += `Database Statistics:\n`;
+            message += `• Total images: ${vitals.database.imageCount}\n`;
+            message += `• User metadata entries: ${vitals.database.userMetaCount}\n`;
+            message += `• Favorite images: ${vitals.database.favoriteCount}\n`;
+            
+            if (vitals.fileWatcher.totalScansPerformed > 0) {
+                const avgFilesPerScan = vitals.fileWatcher.lastScanFileCount / vitals.fileWatcher.totalScansPerformed;
+                const avgTimePerFile = vitals.fileWatcher.averageScanTime / Math.max(1, vitals.fileWatcher.lastScanFileCount);
+                message += `\nPerformance Metrics:\n`;
+                message += `• Average files per scan: ${Math.round(avgFilesPerScan)}\n`;
+                message += `• Average time per file: ${Math.round(avgTimePerFile)}ms\n`;
+            }
+            
+            alert(message);
+        } catch (error) {
+            console.error('Error getting vitals:', error);
+            alert('Failed to get system vitals');
         }
     }
 

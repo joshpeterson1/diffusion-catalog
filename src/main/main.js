@@ -160,6 +160,13 @@ class PhotoCatalogApp {
             click: async () => {
               this.mainWindow.webContents.send('menu-clear-nsfw');
             }
+          },
+          { type: 'separator' },
+          {
+            label: 'Vitals',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-vitals');
+            }
           }
         ]
       },
@@ -371,6 +378,18 @@ class PhotoCatalogApp {
     // Get table data handler
     ipcMain.handle('get-table-data', async (event, tableName) => {
       return await this.database.getTableData(tableName);
+    });
+
+    // Get vitals handler
+    ipcMain.handle('get-vitals', async () => {
+      const fileWatcherVitals = this.fileWatcher.getVitals();
+      const databaseVitals = await this.database.debugInfo();
+      
+      return {
+        fileWatcher: fileWatcherVitals,
+        database: databaseVitals,
+        timestamp: new Date().toISOString()
+      };
     });
   }
 }
