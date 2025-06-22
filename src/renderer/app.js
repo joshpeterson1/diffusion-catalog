@@ -882,17 +882,20 @@ class PhotoCatalogApp {
         clickableElements.forEach(element => {
             element.addEventListener('click', async () => {
                 const textToCopy = element.getAttribute('data-copy');
+                const originalText = element.textContent;
+                
                 try {
                     await navigator.clipboard.writeText(textToCopy);
                     
-                    // Show visual feedback
-                    const originalBg = element.style.backgroundColor;
+                    // Show "Copied!" text feedback
+                    element.textContent = 'Copied!';
                     element.style.backgroundColor = '#007acc';
                     element.style.transition = 'background-color 0.2s';
                     
                     setTimeout(() => {
-                        element.style.backgroundColor = originalBg;
-                    }, 200);
+                        element.textContent = originalText;
+                        element.style.backgroundColor = '';
+                    }, 1000);
                     
                     console.log('Copied to clipboard:', textToCopy);
                 } catch (error) {
@@ -904,6 +907,15 @@ class PhotoCatalogApp {
                     textArea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
+                    
+                    // Show "Copied!" even for fallback method
+                    element.textContent = 'Copied!';
+                    element.style.backgroundColor = '#007acc';
+                    
+                    setTimeout(() => {
+                        element.textContent = originalText;
+                        element.style.backgroundColor = '';
+                    }, 1000);
                 }
             });
         });
