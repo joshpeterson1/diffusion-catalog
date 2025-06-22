@@ -15,9 +15,13 @@ class PhotoCatalogApp {
         this.selectedFolders = [];
         
         this.initializeEventListeners();
-        this.calculateGridDimensions();
-        this.loadSubfolders();
-        this.loadPhotos();
+        
+        // Delay initial load to ensure DOM is ready
+        setTimeout(() => {
+            this.calculateGridDimensions();
+            this.loadSubfolders();
+            this.loadPhotos();
+        }, 100);
     }
 
     initializeEventListeners() {
@@ -67,11 +71,13 @@ class PhotoCatalogApp {
 
         // Window resize handler
         window.addEventListener('resize', () => {
-            this.calculateGridDimensions();
-            if (this.viewMode === 'grid') {
-                this.updateGridLayout();
-                this.loadPhotos(true); // Reload with new page size
-            }
+            setTimeout(() => {
+                this.calculateGridDimensions();
+                if (this.viewMode === 'grid') {
+                    this.updateGridLayout();
+                    this.loadPhotos(true); // Reload with new page size
+                }
+            }, 100);
         });
     }
 
@@ -131,9 +137,20 @@ class PhotoCatalogApp {
 
     calculateGridDimensions() {
         const gallery = document.getElementById('galleryGrid');
-        if (!gallery) return;
+        if (!gallery) {
+            // Fallback dimensions if gallery not ready
+            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 50 };
+            return;
+        }
 
         const galleryRect = gallery.getBoundingClientRect();
+        
+        // If gallery has no dimensions yet, use fallback
+        if (galleryRect.width === 0 || galleryRect.height === 0) {
+            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 50 };
+            return;
+        }
+
         const availableWidth = galleryRect.width - 40; // Account for padding
         const availableHeight = galleryRect.height - 40;
 
@@ -301,11 +318,20 @@ class PhotoCatalogApp {
             photoDiv.appendChild(infoDiv);
         }
 
+        // Add favorite indicator
         if (photo.is_favorite) {
             const favoriteIcon = document.createElement('div');
             favoriteIcon.className = 'favorite-indicator';
             favoriteIcon.textContent = '★';
             photoDiv.appendChild(favoriteIcon);
+        }
+
+        // Add NSFW indicator
+        if (photo.is_nsfw) {
+            const nsfwIcon = document.createElement('div');
+            nsfwIcon.className = 'nsfw-indicator';
+            nsfwIcon.textContent = '🔞';
+            photoDiv.appendChild(nsfwIcon);
         }
 
         photoDiv.appendChild(img);
