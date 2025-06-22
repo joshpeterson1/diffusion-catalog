@@ -358,21 +358,45 @@ class PhotoCatalogApp {
         
         let aiContent = '';
         
-        // Parse and show seed if available in parameters (lowercase)
+        // Parse and show parameters with enhanced formatting
         if (rawExifData.parameters) {
-            const seedMatch = rawExifData.parameters.match(/Seed:\s*(\d+)/i);
-            if (seedMatch) {
+            const parsedParams = this.parseParametersField(rawExifData.parameters);
+            
+            // Show seed if found
+            if (parsedParams.seed) {
                 aiContent += '<div><strong>Seed:</strong></div>';
-                aiContent += `<div style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px;">${seedMatch[1]}</div>`;
+                aiContent += `<div style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px;">${parsedParams.seed}</div>`;
             }
-        }
-        
-        // Show Parameters if available
-        if (rawExifData.parameters) {
-            aiContent += '<div><strong>Parameters:</strong></div>';
-            aiContent += '<div style="max-height: 300px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin-bottom: 15px;">';
+            
+            // Show prompt if found
+            if (parsedParams.prompt) {
+                aiContent += '<div><strong>Prompt:</strong></div>';
+                aiContent += `<div style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4;">${parsedParams.prompt}</div>`;
+            }
+            
+            // Show negative prompt if found
+            if (parsedParams.negativePrompt) {
+                aiContent += '<div><strong>Negative Prompt:</strong></div>';
+                aiContent += `<div style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4;">${parsedParams.negativePrompt}</div>`;
+            }
+            
+            // Show generation parameters if found
+            if (parsedParams.generationParams && parsedParams.generationParams.length > 0) {
+                aiContent += '<div><strong>Generation Parameters:</strong></div>';
+                aiContent += '<div style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px;">';
+                parsedParams.generationParams.forEach(param => {
+                    aiContent += `<div style="margin-bottom: 4px;">${param}</div>`;
+                });
+                aiContent += '</div>';
+            }
+            
+            // Show raw parameters as fallback/debug
+            aiContent += '<details style="margin-bottom: 15px;">';
+            aiContent += '<summary style="cursor: pointer; font-weight: bold; font-size: 12px;">Raw Parameters</summary>';
+            aiContent += '<div style="max-height: 200px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin-top: 5px;">';
             aiContent += rawExifData.parameters;
             aiContent += '</div>';
+            aiContent += '</details>';
         }
         
         // First show any parsed AI metadata we have
@@ -725,6 +749,59 @@ class PhotoCatalogApp {
                 URL.revokeObjectURL(photo.objectUrl);
             }
         });
+    }
+
+    parseParametersField(parametersText) {
+        const result = {
+            prompt: null,
+            negativePrompt: null,
+            generationParams: [],
+            seed: null
+        };
+        
+        // Check if parameters contain newlines for structured parsing
+        if (parametersText.includes('\n')) {
+            const lines = parametersText.split('\n');
+            
+            // First line is typically the prompt
+            if (lines[0] && lines[0].trim()) {
+                result.prompt = lines[0].trim();
+            }
+            
+            // Look for negative prompt line
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.toLowerCase().startsWith('negative prompt:')) {
+                    result.negativePrompt = line.substring(line.indexOf(':') + 1).trim();
+                } else if (line && !line.toLowerCase().startsWith('negative prompt:')) {
+                    // This should be the generation parameters line
+                    // Split by comma and clean up each parameter
+                    const params = line.split(',').map(param => param.trim()).filter(param => param);
+                    result.generationParams = params;
+                    
+                    // Extract seed from generation parameters
+                    const seedParam = params.find(param => param.toLowerCase().includes('seed:'));
+                    if (seedParam) {
+                        const seedMatch = seedParam.match(/seed:\s*(\d+)/i);
+                        if (seedMatch) {
+                            result.seed = seedMatch[1];
+                        }
+                    }
+                    break;
+                }
+            }
+        } else {
+            // No newlines, treat as single parameter string
+            result.generationParams = parametersText.split(',').map(param => param.trim()).filter(param => param);
+            
+            // Still try to extract seed
+            const seedMatch = parametersText.match(/seed:\s*(\d+)/i);
+            if (seedMatch) {
+                result.seed = seedMatch[1];
+            }
+        }
+        
+        return result;
     }
 
     formatFileSize(bytes) {
