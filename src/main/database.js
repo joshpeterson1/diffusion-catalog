@@ -118,18 +118,33 @@ class DatabaseManager {
       isFavorite
     } = options;
 
-    let query = `
-      SELECT i.*, 
-             COALESCE(u.is_favorite, 0) as is_favorite, 
-             COALESCE(u.is_nsfw, 0) as is_nsfw, 
-             u.custom_tags, 
-             u.rating
-      FROM images i
-      LEFT JOIN user_metadata u ON i.id = u.image_id
-      WHERE 1=1
-    `;
-    
-    const params = [];
+    let query, params = [];
+
+    if (isFavorite === true) {
+      // When filtering for favorites, use INNER JOIN
+      query = `
+        SELECT i.*, 
+               u.is_favorite, 
+               u.is_nsfw, 
+               u.custom_tags, 
+               u.rating
+        FROM images i
+        INNER JOIN user_metadata u ON i.id = u.image_id
+        WHERE u.is_favorite = 1
+      `;
+    } else {
+      // When not filtering for favorites, use LEFT JOIN
+      query = `
+        SELECT i.*, 
+               COALESCE(u.is_favorite, 0) as is_favorite, 
+               COALESCE(u.is_nsfw, 0) as is_nsfw, 
+               u.custom_tags, 
+               u.rating
+        FROM images i
+        LEFT JOIN user_metadata u ON i.id = u.image_id
+        WHERE 1=1
+      `;
+    }
     
     if (startDate) {
       query += ' AND i.date_taken >= ?';
@@ -139,10 +154,6 @@ class DatabaseManager {
     if (endDate) {
       query += ' AND i.date_taken <= ?';
       params.push(endDate);
-    }
-    
-    if (isFavorite !== undefined && isFavorite === true) {
-      query += ' AND u.is_favorite = 1';
     }
     
     query += ` ORDER BY i.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;

@@ -35,11 +35,11 @@ class PhotoCatalogApp {
 
         // Filters
         document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
-        document.getElementById('nsfwFilter').addEventListener('change', () => this.applyFilters());
-        document.getElementById('startDate').addEventListener('change', () => this.applyFilters());
-        document.getElementById('endDate').addEventListener('change', () => this.applyFilters());
-        document.getElementById('sortBy').addEventListener('change', () => this.applyFilters());
-        document.getElementById('sortOrder').addEventListener('change', () => this.applyFilters());
+        document.getElementById('nsfwFilter').addEventListener('change', () => this.refreshPhotos());
+        document.getElementById('startDate').addEventListener('change', () => this.refreshPhotos());
+        document.getElementById('endDate').addEventListener('change', () => this.refreshPhotos());
+        document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
+        document.getElementById('sortOrder').addEventListener('change', () => this.refreshPhotos());
 
         // Pagination
         document.getElementById('prevPageBtn').addEventListener('click', () => this.previousPage());
@@ -367,7 +367,7 @@ class PhotoCatalogApp {
                 this.showLoading(false);
             }
         } else {
-            this.applyFilters();
+            this.refreshPhotos();
         }
     }
 
@@ -375,20 +375,16 @@ class PhotoCatalogApp {
         this.favoritesOnly = !this.favoritesOnly;
         const button = document.getElementById('favoritesFilter');
         button.classList.toggle('active', this.favoritesOnly);
-        
-        // Force a complete reset when toggling off
-        if (!this.favoritesOnly) {
-            delete this.currentFilters.isFavorite;
-            this.currentPage = 1;
-            this.currentOffset = 0;
-        }
-        
-        this.applyFilters();
+        this.refreshPhotos();
     }
 
-    applyFilters() {
-        // Start fresh
-        this.currentFilters = {
+    refreshPhotos() {
+        // Reset pagination
+        this.currentPage = 1;
+        this.currentOffset = 0;
+        
+        // Build fresh filter object
+        const filters = {
             sortBy: document.getElementById('sortBy').value,
             sortOrder: document.getElementById('sortOrder').value
         };
@@ -396,16 +392,16 @@ class PhotoCatalogApp {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         
-        if (startDate) this.currentFilters.startDate = startDate;
-        if (endDate) this.currentFilters.endDate = endDate;
+        if (startDate) filters.startDate = startDate;
+        if (endDate) filters.endDate = endDate;
         
-        // Only add favorite filter if it's actually on
+        // Add favorites filter only if enabled
         if (this.favoritesOnly) {
-            this.currentFilters.isFavorite = true;
+            filters.isFavorite = true;
         }
-        // Don't add isFavorite to filters if favoritesOnly is false
 
-        console.log('Applying filters:', this.currentFilters);
+        this.currentFilters = filters;
+        console.log('Refreshing with filters:', this.currentFilters);
         this.loadPhotos(true);
     }
 
