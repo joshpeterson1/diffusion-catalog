@@ -68,6 +68,10 @@ class MetadataExtractor {
       // Generate thumbnail
       const thumbnailPath = await this.generateThumbnail(imageId, filePath);
       
+      // Get file creation date
+      const fileStats = await fs.stat(filePath);
+      const dateCreated = fileStats.birthtime.toISOString();
+      
       // Update image record with extracted data
       const updateStmt = this.database.db.prepare(`
         UPDATE images 
@@ -75,8 +79,8 @@ class MetadataExtractor {
         WHERE id = ?
       `);
       
-      const dateTaken = this.extractDateTaken(exifData);
-      updateStmt.run(dateTaken, metadata.width, metadata.height, thumbnailPath, imageId);
+      // Use file creation date instead of EXIF date
+      updateStmt.run(dateCreated, metadata.width, metadata.height, thumbnailPath, imageId);
       
       // Extract AI metadata if present
       const aiMetadata = this.extractAiMetadata(exifData, filePath);

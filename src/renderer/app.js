@@ -407,11 +407,11 @@ class PhotoCatalogApp {
         // File info
         const fileInfo = document.getElementById('fileInfo');
         fileInfo.innerHTML = `
-            <div><strong>Filename:</strong> ${metadata.filename}</div>
+            <div><strong>Filename:</strong> <span class="clickable-text" data-copy="${metadata.filename}">${metadata.filename}</span></div>
             <div><strong>Size:</strong> ${this.formatFileSize(metadata.file_size)}</div>
             <div><strong>Dimensions:</strong> ${metadata.width} × ${metadata.height}</div>
-            <div><strong>Date Taken:</strong> ${metadata.date_taken ? new Date(metadata.date_taken).toLocaleString() : 'Unknown'}</div>
-            <div><strong>Path:</strong> ${metadata.path}</div>
+            <div><strong>Date Created:</strong> ${metadata.date_taken ? new Date(metadata.date_taken).toLocaleString() : 'Unknown'}</div>
+            <div><strong>Path:</strong> <span class="clickable-text" data-copy="${metadata.path}">${metadata.path}</span></div>
         `;
 
         // AI info - show specific EXIF data
@@ -426,13 +426,13 @@ class PhotoCatalogApp {
             // Show seed if found
             if (parsedParams.seed) {
                 aiContent += '<div><strong>Seed:</strong></div>';
-                aiContent += `<div style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px;">${parsedParams.seed}</div>`;
+                aiContent += `<div class="clickable-text" data-copy="${parsedParams.seed}" style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px; cursor: pointer;">${parsedParams.seed}</div>`;
             }
             
             // Show prompt if found
             if (parsedParams.prompt) {
                 aiContent += '<div><strong>Prompt:</strong></div>';
-                aiContent += `<div style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4;">${parsedParams.prompt}</div>`;
+                aiContent += `<div class="clickable-text" data-copy="${parsedParams.prompt}" style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4; cursor: pointer;">${parsedParams.prompt}</div>`;
             }
             
             // Show negative prompt if found
@@ -488,6 +488,9 @@ class PhotoCatalogApp {
         }
         
         aiInfo.innerHTML = aiContent;
+        
+        // Add click-to-copy functionality
+        this.addClickToCopyListeners();
 
         // Other metadata (EXIF, camera info, etc.)
         const otherInfo = document.getElementById('otherInfo');
@@ -888,6 +891,38 @@ class PhotoCatalogApp {
         // Load data
         await this.loadSubfolders();
         await this.loadPhotos();
+    }
+
+    addClickToCopyListeners() {
+        const clickableElements = document.querySelectorAll('.clickable-text');
+        clickableElements.forEach(element => {
+            element.addEventListener('click', async () => {
+                const textToCopy = element.getAttribute('data-copy');
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    
+                    // Show visual feedback
+                    const originalBg = element.style.backgroundColor;
+                    element.style.backgroundColor = '#007acc';
+                    element.style.transition = 'background-color 0.2s';
+                    
+                    setTimeout(() => {
+                        element.style.backgroundColor = originalBg;
+                    }, 200);
+                    
+                    console.log('Copied to clipboard:', textToCopy);
+                } catch (error) {
+                    console.error('Failed to copy to clipboard:', error);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = textToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+            });
+        });
     }
 
     formatFileSize(bytes) {
