@@ -45,8 +45,30 @@ class MetadataExtractor {
 
   async extractMetadata(imageId, filePath) {
     try {
-      // Extract comprehensive EXIF data
-      const exifData = await exifr.parse(filePath);
+      console.log(`Extracting metadata for: ${path.basename(filePath)}`);
+      
+      // Extract comprehensive EXIF data with more options
+      const exifData = await exifr.parse(filePath, {
+        tiff: true,
+        exif: true,
+        gps: true,
+        interop: true,
+        ifd0: true,
+        ifd1: true,
+        iptc: true,
+        icc: true,
+        jfif: true,
+        ihdr: true,
+        iptc: true,
+        xmp: true,
+        chunked: true,
+        mergeOutput: true
+      });
+      
+      console.log(`EXIF data found:`, exifData ? Object.keys(exifData).length : 0, 'fields');
+      if (exifData) {
+        console.log('Sample EXIF fields:', Object.keys(exifData).slice(0, 10));
+      }
       
       // Get image dimensions using Sharp
       const metadata = await sharp(filePath).metadata();
@@ -62,13 +84,16 @@ class MetadataExtractor {
       `);
       
       const dateTaken = this.extractDateTaken(exifData);
+      console.log(`Date taken extracted: ${dateTaken}`);
       updateStmt.run(dateTaken, metadata.width, metadata.height, thumbnailPath, imageId);
       
       // Extract AI metadata if present
       const aiMetadata = this.extractAiMetadata(exifData, filePath);
       if (aiMetadata) {
-        console.log(`Saving AI metadata for ${path.basename(filePath)}:`, aiMetadata);
+        console.log(`Saving AI metadata for ${path.basename(filePath)}:`, JSON.stringify(aiMetadata, null, 2));
         await this.database.addAiMetadata(imageId, aiMetadata);
+      } else {
+        console.log(`No AI metadata found for ${path.basename(filePath)}`);
       }
       
     } catch (error) {
@@ -77,43 +102,75 @@ class MetadataExtractor {
   }
 
   extractDateTaken(exifData) {
-    if (!exifData) return null;
+    if (!exifData) {
+      console.log('No EXIF data for date extraction');
+      return null;
+    }
     
     // Try different date fields in order of preference
-    const dateFields = ['DateTimeOriginal', 'CreateDate', 'ModifyDate'];
+    const dateFields = [
+      'DateTimeOriginal', 
+      'CreateDate', 
+      'ModifyDate',
+      'DateTime',
+      'DateTimeDigitized'
+    ];
+    
+    console.log('Available EXIF date fields:', dateFields.filter(field => exifData[field]));
+    
     for (const field of dateFields) {
       if (exifData[field]) {
-        return exifData[field].toISOString();
+        try {
+          const date = new Date(exifData[field]);
+          if (!isNaN(date.getTime())) {
+            console.log(`Using date from ${field}: ${date.toISOString()}`);
+            return date.toISOString();
+          }
+        } catch (error) {
+          console.log(`Error parsing date from ${field}:`, error);
+        }
       }
     }
+    
+    console.log('No valid date found in EXIF data');
     return null;
   }
 
   extractAiMetadata(exifData, filePath) {
-    if (!exifData) return null;
+    if (!exifData) {
+      console.log('No EXIF data for AI metadata extraction');
+      return null;
+    }
     
+    console.log('Checking for AI metadata in EXIF fields...');
     let aiData = {};
     
     // Check all possible EXIF fields that might contain AI metadata
     const textFields = [
-      exifData.Parameters,        // Put Parameters first since that's where AI data usually is
-      exifData.UserComment,
-      exifData.ImageDescription,
-      exifData.Software,
-      exifData.Artist,
-      exifData.Copyright,
-      exifData.XPComment,
-      exifData.XPKeywords,
-      exifData.prompt,
-      exifData.workflow,
-      exifData.Comment
+      { name: 'Parameters', value: exifData.Parameters },
+      { name: 'UserComment', value: exifData.UserComment },
+      { name: 'ImageDescription', value: exifData.ImageDescription },
+      { name: 'Software', value: exifData.Software },
+      { name: 'Artist', value: exifData.Artist },
+      { name: 'Copyright', value: exifData.Copyright },
+      { name: 'XPComment', value: exifData.XPComment },
+      { name: 'XPKeywords', value: exifData.XPKeywords },
+      { name: 'prompt', value: exifData.prompt },
+      { name: 'workflow', value: exifData.workflow },
+      { name: 'Comment', value: exifData.Comment }
     ];
     
+    // Log which fields have data
+    const fieldsWithData = textFields.filter(field => field.value);
+    console.log('EXIF fields with text data:', fieldsWithData.map(f => f.name));
+    
     // Try to parse AI data from each field
-    for (const text of textFields) {
-      if (text && typeof text === 'string') {
-        const parsedData = this.parseAiText(text);
+    for (const field of textFields) {
+      if (field.value && typeof field.value === 'string') {
+        console.log(`Parsing AI data from ${field.name}: ${field.value.substring(0, 100)}...`);
+        const parsedData = this.parseAiText(field.value);
         if (Object.keys(parsedData).length > 0) {
+          console.log(`Found AI data in ${field.name}:`, parsedData);
           // Merge parsed data, giving priority to first found values
           aiData = { ...parsedData, ...aiData };
         }
