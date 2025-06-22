@@ -31,6 +31,7 @@ class PhotoCatalogApp {
         document.getElementById('addDirectoryBtn').addEventListener('click', () => this.addDirectory());
         document.getElementById('clearDbBtn').addEventListener('click', () => this.clearDatabase());
         document.getElementById('debugDbBtn').addEventListener('click', () => this.debugDatabase());
+        document.getElementById('viewDbBtn').addEventListener('click', () => this.viewDatabase());
 
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
@@ -761,6 +762,38 @@ class PhotoCatalogApp {
             alert(`Images: ${debug.imageCount}, User Meta: ${debug.userMetaCount}, Favorites: ${debug.favoriteCount}`);
         } catch (error) {
             console.error('Error getting debug info:', error);
+        }
+    }
+
+    async viewDatabase() {
+        try {
+            const debug = await window.electronAPI.debugDatabase();
+            console.log('Full database debug info:', debug);
+            
+            let message = `Database Contents:\n\n`;
+            message += `Images: ${debug.imageCount}\n`;
+            message += `User Metadata: ${debug.userMetaCount}\n`;
+            message += `Favorites: ${debug.favoriteCount}\n\n`;
+            
+            if (debug.sampleImages && debug.sampleImages.length > 0) {
+                message += `Sample Images:\n`;
+                debug.sampleImages.forEach(img => {
+                    message += `- ${img.filename} (ID: ${img.id})\n`;
+                });
+                message += `\n`;
+            }
+            
+            if (debug.sampleUserMeta && debug.sampleUserMeta.length > 0) {
+                message += `Sample User Metadata:\n`;
+                debug.sampleUserMeta.forEach(meta => {
+                    message += `- Image ${meta.image_id}: Favorite: ${meta.is_favorite}, NSFW: ${meta.is_nsfw}\n`;
+                });
+            }
+            
+            alert(message);
+        } catch (error) {
+            console.error('Error viewing database:', error);
+            alert('Failed to view database');
         }
     }
 
