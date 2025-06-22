@@ -31,7 +31,9 @@ class DatabaseManager {
         width INTEGER,
         height INTEGER,
         thumbnail_path TEXT,
-        hash TEXT
+        hash TEXT,
+        is_archive BOOLEAN DEFAULT FALSE,
+        archive_path TEXT
       )
     `);
 
@@ -91,8 +93,8 @@ class DatabaseManager {
     try {
       const stmt = this.db.prepare(`
         INSERT OR REPLACE INTO images 
-        (path, filename, date_taken, file_size, width, height, hash)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (path, filename, date_taken, file_size, width, height, hash, is_archive, archive_path)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const result = stmt.run(
@@ -102,7 +104,9 @@ class DatabaseManager {
         imageData.fileSize,
         imageData.width,
         imageData.height,
-        imageData.hash
+        imageData.hash,
+        imageData.isArchive || false,
+        imageData.archivePath || null
       );
       
       return result.lastInsertRowid;

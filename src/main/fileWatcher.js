@@ -184,10 +184,12 @@ class FileWatcher {
 
   async scanExistingFiles(dirPath) {
     const glob = require('fast-glob');
-    const patterns = Array.from(this.supportedExtensions).map(ext => `**/*${ext}`);
+    const imagePatterns = Array.from(this.supportedExtensions).map(ext => `**/*${ext}`);
+    const archivePatterns = Array.from(this.supportedArchives).map(ext => `**/*${ext}`);
+    const allPatterns = [...imagePatterns, ...archivePatterns];
     
     try {
-      const files = await glob(patterns, {
+      const files = await glob(allPatterns, {
         cwd: dirPath,
         absolute: true,
         caseSensitiveMatch: false

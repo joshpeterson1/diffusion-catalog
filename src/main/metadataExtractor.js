@@ -3,6 +3,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
 const { app } = require('electron');
+const yauzl = require('yauzl');
 
 class MetadataExtractor {
   constructor(database) {
@@ -45,8 +46,29 @@ class MetadataExtractor {
 
   async extractMetadata(imageId, filePath) {
     try {
-      // Extract comprehensive EXIF data with more options
-      const exifData = await exifr.parse(filePath, {
+      let imageBuffer, metadata, dateCreated;
+      
+      if (filePath.includes('::')) {
+        // Handle ZIP archive entry
+        const [zipPath, entryName] = filePath.split('::');
+        imageBuffer = await this.extractImageFromZip(zipPath, entryName);
+        
+        // Get ZIP file stats for date
+        const zipStats = await fs.stat(zipPath);
+        dateCreated = zipStats.birthtime.toISOString();
+        
+        // Process buffer with Sharp
+        metadata = await sharp(imageBuffer).metadata();
+      } else {
+        // Handle regular file
+        const fileStats = await fs.stat(filePath);
+        dateCreated = fileStats.birthtime.toISOString();
+        metadata = await sharp(filePath).metadata();
+        imageBuffer = await fs.readFile(filePath);
+      }
+      
+      // Extract EXIF data from buffer
+      const exifData = await exifr.parse(imageBuffer, {
         tiff: true,
         exif: true,
         gps: true,
@@ -62,15 +84,8 @@ class MetadataExtractor {
         mergeOutput: true
       });
       
-      // Get image dimensions using Sharp
-      const metadata = await sharp(filePath).metadata();
-      
       // Generate thumbnail
-      const thumbnailPath = await this.generateThumbnail(imageId, filePath);
-      
-      // Get file creation date
-      const fileStats = await fs.stat(filePath);
-      const dateCreated = fileStats.birthtime.toISOString();
+      const thumbnailPath = await this.generateThumbnail(imageId, imageBuffer, filePath);
       
       // Update image record with extracted data
       const updateStmt = this.database.db.prepare(`
@@ -79,7 +94,6 @@ class MetadataExtractor {
         WHERE id = ?
       `);
       
-      // Use file creation date instead of EXIF date
       updateStmt.run(dateCreated, metadata.width, metadata.height, thumbnailPath, imageId);
       
       // Extract AI metadata if present
@@ -93,11 +107,51 @@ class MetadataExtractor {
     }
   }
 
+  async extractImageFromZip(zipPath, entryName) {
+    return new Promise((resolve, reject) => {
+      yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) return reject(err);
+        
+        zipfile.readEntry();
+        
+        zipfile.on('entry', (entry) => {
+          if (entry.fileName === entryName) {
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) return reject(err);
+              
+              const chunks = [];
+              readStream.on('data', chunk => chunks.push(chunk));
+              readStream.on('end', () => resolve(Buffer.concat(chunks)));
+              readStream.on('error', reject);
+            });
+          } else {
+            zipfile.readEntry();
+          }
+        });
+        
+        zipfile.on('end', () => {
+          reject(new Error(`Entry ${entryName} not found in ZIP`));
+        });
+      });
+    });
+  }
+
   // New method to extract raw EXIF data on demand
   async extractRawExifData(filePath) {
     console.log(`EXTRACTING RAW EXIF for: ${filePath}`);
     try {
-      const exifData = await exifr.parse(filePath, {
+      let imageBuffer;
+      
+      if (filePath.includes('::')) {
+        // Handle ZIP archive entry
+        const [zipPath, entryName] = filePath.split('::');
+        imageBuffer = await this.extractImageFromZip(zipPath, entryName);
+      } else {
+        // Handle regular file
+        imageBuffer = await fs.readFile(filePath);
+      }
+      
+      const exifData = await exifr.parse(imageBuffer, {
         tiff: true,
         exif: true,
         gps: true,
@@ -265,7 +319,7 @@ class MetadataExtractor {
     return aiData;
   }
 
-  async generateThumbnail(imageId, filePath) {
+  async generateThumbnail(imageId, imageSource, originalPath) {
     const thumbnailFilename = `thumb_${imageId}.webp`;
     const thumbnailPath = path.join(this.thumbnailDir, thumbnailFilename);
     
@@ -278,7 +332,8 @@ class MetadataExtractor {
         // Thumbnail doesn't exist, create it
       }
 
-      await sharp(filePath)
+      // imageSource can be either a file path or a Buffer
+      await sharp(imageSource)
         .resize(300, 300, { 
           fit: 'cover',
           position: 'center'
@@ -288,9 +343,9 @@ class MetadataExtractor {
         
       return thumbnailPath;
     } catch (error) {
-      console.error(`Error generating thumbnail for ${filePath}:`, error);
+      console.error(`Error generating thumbnail for ${originalPath}:`, error);
       // Return original file path as fallback
-      return filePath;
+      return originalPath;
     }
   }
 }

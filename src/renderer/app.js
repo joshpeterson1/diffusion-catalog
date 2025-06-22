@@ -320,7 +320,12 @@ class PhotoCatalogApp {
         photoDiv.addEventListener('click', () => this.openPhotoModal(photo));
 
         const img = document.createElement('img');
-        img.src = photo.thumbnail_path ? `file://${photo.thumbnail_path}` : `file://${photo.path}`;
+        // For ZIP entries, always use thumbnail since we can't directly access the file
+        if (photo.path.includes('::')) {
+            img.src = photo.thumbnail_path ? `file://${photo.thumbnail_path}` : '';
+        } else {
+            img.src = photo.thumbnail_path ? `file://${photo.thumbnail_path}` : `file://${photo.path}`;
+        }
         img.alt = photo.filename;
         img.loading = 'lazy';
 
@@ -409,7 +414,14 @@ class PhotoCatalogApp {
         
         // Set image
         const modalImage = document.getElementById('modalImage');
-        modalImage.src = `file://${photo.path}`;
+        // For ZIP entries, we need to use a different approach since we can't directly access file://
+        if (photo.path.includes('::')) {
+            // For now, use the thumbnail for ZIP entries in the modal
+            // TODO: Implement a way to extract and serve ZIP entries
+            modalImage.src = photo.thumbnail_path ? `file://${photo.thumbnail_path}` : '';
+        } else {
+            modalImage.src = `file://${photo.path}`;
+        }
         
         // Populate metadata with raw EXIF data
         this.populateMetadata(fullMetadata, rawExifData);
