@@ -517,6 +517,12 @@ class PhotoCatalogApp {
         this.refreshPhotos();
     }
 
+    toggleNsfw() {
+        this.includeNsfw = document.getElementById('nsfwFilter').checked;
+        console.log('TOGGLE NSFW:', this.includeNsfw);
+        this.refreshPhotos();
+    }
+
     refreshPhotos() {
         // Reset pagination
         this.currentPage = 1;
