@@ -5,8 +5,10 @@ class PhotoCatalogApp {
         this.currentFilters = {};
         this.currentPhoto = null;
         this.isLoading = false;
+        this.viewMode = 'grid'; // 'grid' or 'list'
         
         this.initializeEventListeners();
+        this.setDefaultDateRange();
         this.loadPhotos();
     }
 
@@ -19,6 +21,10 @@ class PhotoCatalogApp {
 
         // Directory management
         document.getElementById('addDirectoryBtn').addEventListener('click', () => this.addDirectory());
+
+        // View controls
+        document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
+        document.getElementById('listViewBtn').addEventListener('click', () => this.setViewMode('list'));
 
         // Filters
         document.getElementById('favoritesFilter').addEventListener('change', () => this.applyFilters());
@@ -46,6 +52,29 @@ class PhotoCatalogApp {
         });
     }
 
+    setDefaultDateRange() {
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        document.getElementById('startDate').value = firstDayOfMonth.toISOString().split('T')[0];
+        document.getElementById('endDate').value = lastDayOfMonth.toISOString().split('T')[0];
+    }
+
+    setViewMode(mode) {
+        this.viewMode = mode;
+        
+        // Update button states
+        document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
+        document.getElementById('listViewBtn').classList.toggle('active', mode === 'list');
+        
+        // Update gallery class
+        const gallery = document.getElementById('galleryGrid');
+        gallery.className = mode === 'grid' ? 'gallery-grid' : 'gallery-list';
+        
+        this.renderGallery();
+    }
+
     async loadPhotos(reset = true) {
         if (this.isLoading) return;
         
@@ -54,7 +83,7 @@ class PhotoCatalogApp {
 
         try {
             const options = {
-                limit: 200,
+                limit: 25, // 5x5 grid
                 offset: reset ? 0 : this.currentOffset,
                 ...this.currentFilters
             };
@@ -72,7 +101,7 @@ class PhotoCatalogApp {
             }
 
             this.updatePhotoCount();
-            this.updateLoadMoreButton(photos.length === 200);
+            this.updateLoadMoreButton(photos.length === 25);
 
         } catch (error) {
             console.error('Error loading photos:', error);
@@ -103,7 +132,7 @@ class PhotoCatalogApp {
 
     createPhotoElement(photo) {
         const photoDiv = document.createElement('div');
-        photoDiv.className = 'photo-item';
+        photoDiv.className = this.viewMode === 'grid' ? 'photo-item' : 'photo-item-list';
         photoDiv.addEventListener('click', () => this.openPhotoModal(photo));
 
         const img = document.createElement('img');
@@ -111,21 +140,42 @@ class PhotoCatalogApp {
         img.alt = photo.filename;
         img.loading = 'lazy';
 
-        const overlay = document.createElement('div');
-        overlay.className = 'photo-overlay';
-        
-        const filename = document.createElement('div');
-        filename.className = 'filename';
-        filename.textContent = photo.filename;
-        
-        const metadata = document.createElement('div');
-        metadata.className = 'metadata';
-        metadata.textContent = photo.date_taken ? 
-            new Date(photo.date_taken).toLocaleDateString() : 
-            'No date';
+        if (this.viewMode === 'grid') {
+            const overlay = document.createElement('div');
+            overlay.className = 'photo-overlay';
+            
+            const filename = document.createElement('div');
+            filename.className = 'filename';
+            filename.textContent = photo.filename;
+            
+            const metadata = document.createElement('div');
+            metadata.className = 'metadata';
+            metadata.textContent = photo.date_taken ? 
+                new Date(photo.date_taken).toLocaleDateString() : 
+                'No date';
 
-        overlay.appendChild(filename);
-        overlay.appendChild(metadata);
+            overlay.appendChild(filename);
+            overlay.appendChild(metadata);
+            photoDiv.appendChild(overlay);
+        } else {
+            // List view layout
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'photo-info';
+            
+            const filename = document.createElement('div');
+            filename.className = 'filename';
+            filename.textContent = photo.filename;
+            
+            const metadata = document.createElement('div');
+            metadata.className = 'metadata';
+            metadata.textContent = photo.date_taken ? 
+                new Date(photo.date_taken).toLocaleString() : 
+                'No date';
+            
+            infoDiv.appendChild(filename);
+            infoDiv.appendChild(metadata);
+            photoDiv.appendChild(infoDiv);
+        }
 
         if (photo.is_favorite) {
             const favoriteIcon = document.createElement('div');
@@ -135,7 +185,6 @@ class PhotoCatalogApp {
         }
 
         photoDiv.appendChild(img);
-        photoDiv.appendChild(overlay);
 
         return photoDiv;
     }
