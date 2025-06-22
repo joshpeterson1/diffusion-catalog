@@ -148,13 +148,22 @@ class PhotoCatalogApp {
           {
             label: 'About',
             click: () => {
-              const { dialog } = require('electron');
+              const { dialog, shell } = require('electron');
               dialog.showMessageBox(this.mainWindow, {
                 type: 'info',
                 title: 'About AI Photo Catalog',
                 message: 'AI Photo Catalog',
-                detail: 'A powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.',
-                icon: path.join(__dirname, '..', '..', 'icon.png')
+                detail: 'Made by somber with love\n\nA powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.',
+                icon: path.join(__dirname, '..', '..', 'icon.png'),
+                buttons: ['Close', 'View Project', 'Open Issue']
+              }).then((result) => {
+                if (result.response === 1) {
+                  // View Project button clicked
+                  shell.openExternal('https://google.com');
+                } else if (result.response === 2) {
+                  // Open Issue button clicked
+                  shell.openExternal('https://google.com');
+                }
               });
             }
           }
