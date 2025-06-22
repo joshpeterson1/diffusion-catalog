@@ -121,40 +121,39 @@ class DatabaseManager {
       selectedFolders = [],
       sortBy = 'date_taken',
       sortOrder = 'DESC',
-      isFavorite
+      isFavorite,
+      excludeNsfw
     } = options;
 
     console.log('isFavorite value:', isFavorite, 'type:', typeof isFavorite);
+    console.log('excludeNsfw value:', excludeNsfw, 'type:', typeof excludeNsfw);
     console.log('selectedFolders:', selectedFolders);
 
     let query, params = [];
 
+    // Always use LEFT JOIN to ensure we get all images with their metadata
+    console.log('BUILDING QUERY WITH LEFT JOIN');
+    query = `
+      SELECT i.*, 
+             COALESCE(u.is_favorite, 0) as is_favorite, 
+             COALESCE(u.is_nsfw, 0) as is_nsfw, 
+             u.custom_tags, 
+             u.rating
+      FROM images i
+      LEFT JOIN user_metadata u ON i.id = u.image_id
+      WHERE 1=1
+    `;
+    
+    // Apply favorite filter if specified
     if (isFavorite === true) {
-      console.log('BUILDING FAVORITES QUERY WITH INNER JOIN');
-      // When filtering for favorites, use INNER JOIN
-      query = `
-        SELECT i.*, 
-               u.is_favorite, 
-               u.is_nsfw, 
-               u.custom_tags, 
-               u.rating
-        FROM images i
-        INNER JOIN user_metadata u ON i.id = u.image_id
-        WHERE u.is_favorite = 1
-      `;
-    } else {
-      console.log('BUILDING ALL PHOTOS QUERY WITH LEFT JOIN');
-      // When not filtering for favorites, use LEFT JOIN
-      query = `
-        SELECT i.*, 
-               COALESCE(u.is_favorite, 0) as is_favorite, 
-               COALESCE(u.is_nsfw, 0) as is_nsfw, 
-               u.custom_tags, 
-               u.rating
-        FROM images i
-        LEFT JOIN user_metadata u ON i.id = u.image_id
-        WHERE 1=1
-      `;
+      query += ' AND COALESCE(u.is_favorite, 0) = 1';
+      console.log('Added favorites filter');
+    }
+    
+    // Apply NSFW filter if specified
+    if (excludeNsfw === true) {
+      query += ' AND COALESCE(u.is_nsfw, 0) = 0';
+      console.log('Added NSFW exclusion filter');
     }
     
     // Filter by selected folders if any are specified
@@ -165,12 +164,6 @@ class DatabaseManager {
         params.push(`${folder}%`);
       });
       console.log('Added folder filters for:', selectedFolders);
-    }
-
-    if (options.excludeNsfw) {
-      // Exclude NSFW photos - only show photos that are NOT marked as NSFW
-      query += ' AND (u.is_nsfw IS NULL OR u.is_nsfw = 0)';
-      console.log('Added NSFW exclusion filter');
     }
     
     query += ` ORDER BY i.${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
