@@ -75,6 +75,14 @@ class PhotoCatalogApp {
             label: 'Select All',
             accelerator: 'CmdOrCtrl+A',
             role: 'selectall'
+          },
+          { type: 'separator' },
+          {
+            label: 'Preferences',
+            accelerator: 'CmdOrCtrl+,',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-preferences');
+            }
           }
         ]
       },
@@ -138,6 +146,19 @@ class PhotoCatalogApp {
             label: 'View Database',
             click: async () => {
               this.mainWindow.webContents.send('menu-view-db');
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Clear all Favorites',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-clear-favorites');
+            }
+          },
+          {
+            label: 'Clear all NSFW',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-clear-nsfw');
             }
           }
         ]
@@ -308,6 +329,16 @@ class PhotoCatalogApp {
     ipcMain.handle('open-in-directory', async (event, filePath) => {
       const { shell } = require('electron');
       shell.showItemInFolder(filePath);
+    });
+
+    // Clear all favorites handler
+    ipcMain.handle('clear-all-favorites', async () => {
+      return await this.database.clearAllFavorites();
+    });
+
+    // Clear all NSFW handler
+    ipcMain.handle('clear-all-nsfw', async () => {
+      return await this.database.clearAllNsfw();
     });
   }
 }

@@ -37,5 +37,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuAddDirectory: (callback) => ipcRenderer.on('menu-add-directory', callback),
   onMenuClearDb: (callback) => ipcRenderer.on('menu-clear-db', callback),
   onMenuDebugDb: (callback) => ipcRenderer.on('menu-debug-db', callback),
-  onMenuViewDb: (callback) => ipcRenderer.on('menu-view-db', callback)
+  onMenuViewDb: (callback) => ipcRenderer.on('menu-view-db', callback),
+  onMenuPreferences: (callback) => ipcRenderer.on('menu-preferences', callback),
+  onMenuClearFavorites: (callback) => ipcRenderer.on('menu-clear-favorites', callback),
+  onMenuClearNsfw: (callback) => ipcRenderer.on('menu-clear-nsfw', callback),
+  
+  // Clear operations
+  clearAllFavorites: () => ipcRenderer.invoke('clear-all-favorites'),
+  clearAllNsfw: () => ipcRenderer.invoke('clear-all-nsfw')
 });

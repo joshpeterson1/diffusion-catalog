@@ -392,6 +392,24 @@ class DatabaseManager {
     }
   }
 
+  async clearAllFavorites() {
+    try {
+      const result = this.db.prepare('UPDATE user_metadata SET is_favorite = 0 WHERE is_favorite = 1').run();
+      return { success: true, count: result.changes, message: 'All favorites cleared successfully' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  async clearAllNsfw() {
+    try {
+      const result = this.db.prepare('UPDATE user_metadata SET is_nsfw = 0 WHERE is_nsfw = 1').run();
+      return { success: true, count: result.changes, message: 'All NSFW tags cleared successfully' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
   close() {
     if (this.db) {
       this.db.close();

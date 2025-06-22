@@ -32,6 +32,9 @@ class PhotoCatalogApp {
         window.electronAPI.onMenuClearDb(() => this.clearDatabase());
         window.electronAPI.onMenuDebugDb(() => this.debugDatabase());
         window.electronAPI.onMenuViewDb(() => this.viewDatabase());
+        window.electronAPI.onMenuPreferences(() => this.openPreferences());
+        window.electronAPI.onMenuClearFavorites(() => this.clearAllFavorites());
+        window.electronAPI.onMenuClearNsfw(() => this.clearAllNsfw());
 
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
@@ -806,6 +809,44 @@ class PhotoCatalogApp {
         } catch (error) {
             console.error('Error viewing database:', error);
             alert('Failed to view database');
+        }
+    }
+
+    openPreferences() {
+        alert('Preferences dialog coming soon!');
+    }
+
+    async clearAllFavorites() {
+        if (confirm('Are you sure you want to clear all favorite tags? This cannot be undone.')) {
+            try {
+                const result = await window.electronAPI.clearAllFavorites();
+                if (result.success) {
+                    alert(`Successfully cleared ${result.count} favorite tags`);
+                    this.refreshPhotos();
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error clearing favorites:', error);
+                alert('Failed to clear favorites');
+            }
+        }
+    }
+
+    async clearAllNsfw() {
+        if (confirm('Are you sure you want to clear all NSFW tags? This cannot be undone.')) {
+            try {
+                const result = await window.electronAPI.clearAllNsfw();
+                if (result.success) {
+                    alert(`Successfully cleared ${result.count} NSFW tags`);
+                    this.refreshPhotos();
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error clearing NSFW tags:', error);
+                alert('Failed to clear NSFW tags');
+            }
         }
     }
 
