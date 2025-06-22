@@ -122,6 +122,15 @@ class MetadataExtractor {
     
     let aiData = {};
     
+    // Debug: Log what EXIF fields we have
+    if (path.basename(filePath).includes('00000-3604720350')) {
+      console.log('DEBUG: EXIF fields for sample image:', Object.keys(exifData));
+      if (exifData.Parameters) {
+        console.log('DEBUG: Parameters field length:', exifData.Parameters.length);
+        console.log('DEBUG: Parameters preview:', exifData.Parameters.substring(0, 200) + '...');
+      }
+    }
+    
     // Check all possible EXIF fields that might contain AI metadata
     const textFields = [
       exifData.Parameters,
@@ -142,16 +151,14 @@ class MetadataExtractor {
       if (text && typeof text === 'string') {
         const parsedData = this.parseAiText(text);
         if (Object.keys(parsedData).length > 0) {
+          // Debug: Log successful parsing
+          if (path.basename(filePath).includes('00000-3604720350')) {
+            console.log('DEBUG: Successfully parsed AI data:', parsedData);
+          }
           // Merge parsed data, giving priority to first found values
           aiData = { ...parsedData, ...aiData };
         }
       }
-    }
-    
-    // For PNG files, check text chunks (would need additional parsing)
-    if (path.extname(filePath).toLowerCase() === '.png') {
-      // PNG text chunk parsing would go here
-      // This requires additional PNG parsing logic
     }
     
     return Object.keys(aiData).length > 0 ? aiData : null;
@@ -160,51 +167,60 @@ class MetadataExtractor {
   parseAiText(text) {
     const aiData = {};
     
-    // Parse the Parameters field format from your example
-    // The text appears to be in a specific format with comma-separated key-value pairs
+    // Handle the specific format from your EXIF data
+    // The text contains a long prompt followed by "Negative prompt:" and then parameters
     
-    // First, try to extract the main prompt (everything before "Negative prompt:")
-    const negativePromptMatch = text.match(/Negative prompt:\s*(.+?)(?:\s+Steps:|$)/s);
-    const promptMatch = text.match(/^(.+?)(?:\s*Negative prompt:|$)/s);
-    
-    if (promptMatch) {
-      let prompt = promptMatch[1].trim();
-      // Remove any trailing commas or periods
-      prompt = prompt.replace(/[,.]$/, '');
+    // Extract the main prompt (everything before "Negative prompt:")
+    const negativePromptSplit = text.split('Negative prompt:');
+    if (negativePromptSplit.length > 0) {
+      let prompt = negativePromptSplit[0].trim();
       if (prompt) {
         aiData.prompt = prompt;
       }
     }
     
-    if (negativePromptMatch) {
-      aiData.negativePrompt = negativePromptMatch[1].trim();
-    }
-    
-    // Parse other parameters using more specific patterns
-    const patterns = {
-      steps: /Steps:\s*(\d+)/i,
-      sampler: /Sampler:\s*([^,]+)/i,
-      cfgScale: /CFG scale:\s*([\d.]+)/i,
-      seed: /Seed:\s*(\d+)/i,
-      size: /Size:\s*(\d+x\d+)/i,
-      model: /Model:\s*([^,]+)/i,
-      modelHash: /Model hash:\s*([^,]+)/i
-    };
-    
-    for (const [key, pattern] of Object.entries(patterns)) {
-      const match = text.match(pattern);
-      if (match) {
-        let value = match[1].trim();
-        
-        // Type conversion
-        if (key === 'steps' || key === 'seed') {
-          value = parseInt(value);
-        } else if (key === 'cfgScale') {
-          value = parseFloat(value);
+    // Extract negative prompt and parameters (everything after "Negative prompt:")
+    if (negativePromptSplit.length > 1) {
+      const afterNegative = negativePromptSplit[1];
+      
+      // Look for "Steps:" to separate negative prompt from parameters
+      const stepsSplit = afterNegative.split(/\s+Steps:/);
+      if (stepsSplit.length > 0) {
+        let negativePrompt = stepsSplit[0].trim();
+        if (negativePrompt) {
+          aiData.negativePrompt = negativePrompt;
         }
-        
-        if (value !== '' && (typeof value === 'string' || !isNaN(value))) {
-          aiData[key] = value;
+      }
+      
+      // Parse parameters from the full text after "Negative prompt:"
+      const paramText = afterNegative;
+      
+      // More flexible patterns to handle the actual format
+      const patterns = {
+        steps: /Steps:\s*(\d+)/i,
+        sampler: /Sampler:\s*([^,]+?)(?:,|\s+[A-Z]|$)/i,
+        cfgScale: /CFG scale:\s*([\d.]+)/i,
+        seed: /Seed:\s*(\d+)/i,
+        size: /Size:\s*(\d+x\d+)/i,
+        model: /Model:\s*([^,]+?)(?:,|\s+[A-Z]|$)/i,
+        modelHash: /Model hash:\s*([a-fA-F0-9]+)/i
+      };
+      
+      for (const [key, pattern] of Object.entries(patterns)) {
+        const match = paramText.match(pattern);
+        if (match) {
+          let value = match[1].trim();
+          
+          // Type conversion
+          if (key === 'steps' || key === 'seed') {
+            value = parseInt(value);
+          } else if (key === 'cfgScale') {
+            value = parseFloat(value);
+          }
+          
+          if (value !== '' && (typeof value === 'string' || !isNaN(value))) {
+            aiData[key] = value;
+          }
         }
       }
     }
