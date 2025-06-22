@@ -45,16 +45,22 @@ body {
     color: #ffffff;
     width: 300px;
     font-size: 14px;
+    outline: none;
 }
 
 .search-container input:focus {
-    outline: none;
     border-color: #007acc;
     background-color: #4a4a4a;
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
 .search-container input::placeholder {
     color: #888;
+}
+
+.search-container input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .search-container button,
