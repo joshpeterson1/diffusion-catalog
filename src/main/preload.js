@@ -43,7 +43,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuClearNsfw: (callback) => ipcRenderer.on('menu-clear-nsfw', callback),
   onMenuVitals: (callback) => ipcRenderer.on('menu-vitals', callback),
   onMenuRebuildDb: (callback) => ipcRenderer.on('menu-rebuild-db', callback),
-  onMenuScanDirectories: (callback) => ipcRenderer.on('menu-scan-directories', callback),
+  onMenuUpdateDatabase: (callback) => ipcRenderer.on('menu-update-database', callback),
   
   // Clear operations
   clearAllFavorites: () => ipcRenderer.invoke('clear-all-favorites'),
@@ -58,8 +58,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Rebuild database
   rebuildDatabase: () => ipcRenderer.invoke('rebuild-database'),
   
-  // Scan directories
-  scanDirectories: () => ipcRenderer.invoke('scan-directories'),
+  // Update database
+  updateDatabase: () => ipcRenderer.invoke('update-database'),
   
   // Watched directories
   getWatchedDirectories: () => ipcRenderer.invoke('get-watched-directories'),

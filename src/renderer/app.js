@@ -69,6 +69,7 @@ class PhotoCatalogApp {
         window.electronAPI.onMenuClearFavorites(() => this.clearAllFavorites());
         window.electronAPI.onMenuClearNsfw(() => this.clearAllNsfw());
         window.electronAPI.onMenuRebuildDb(() => this.rebuildDatabase());
+        window.electronAPI.onMenuUpdateDatabase(() => this.updateDatabase());
 
         // Listen for automatic photo updates from file watcher
         window.electronAPI.onPhotosUpdated(() => {

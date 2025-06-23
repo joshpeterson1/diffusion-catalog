@@ -177,9 +177,9 @@ class PhotoCatalogApp {
           },
           { type: 'separator' },
           {
-            label: 'Scan Directories',
+            label: 'Update Database',
             click: async () => {
-              this.mainWindow.webContents.send('menu-scan-directories');
+              this.mainWindow.webContents.send('menu-update-database');
             }
           },
           {
@@ -498,8 +498,8 @@ class PhotoCatalogApp {
       }
     });
 
-    // Scan directories handler
-    ipcMain.handle('scan-directories', async () => {
+    // Update database handler
+    ipcMain.handle('update-database', async () => {
       return await this.fileWatcher.scanAllWatchedDirectories();
     });
 
