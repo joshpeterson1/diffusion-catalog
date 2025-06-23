@@ -218,49 +218,106 @@ class PhotoCatalogApp {
 
     async loadSubfolders() {
         try {
-            const subfolders = await window.electronAPI.getSubfolders();
-            this.renderFolderList(subfolders);
+            const folderTree = await window.electronAPI.getSubfolders();
+            this.folderTree = folderTree; // Store for expansion/collapse
+            this.renderFolderList(folderTree);
         } catch (error) {
             console.error('Error loading subfolders:', error);
         }
     }
 
-    renderFolderList(subfolders) {
+    renderFolderList(folderTree) {
         const folderList = document.getElementById('folderList');
         
-        if (!subfolders || subfolders.length === 0) {
+        if (!folderTree || folderTree.length === 0) {
             folderList.innerHTML = '<div class="no-folders">No folders found</div>';
             return;
         }
 
         folderList.innerHTML = '';
-        
-        subfolders.forEach(folder => {
+        this.renderFolderTreeNodes(folderTree, folderList, 0);
+    }
+
+    renderFolderTreeNodes(nodes, container, level) {
+        nodes.forEach(node => {
             const folderItem = document.createElement('div');
             folderItem.className = 'folder-item';
+            folderItem.style.paddingLeft = `${level * 8}px`; // Conservative indentation: 8px per level
+            
+            // Create expand/collapse button for nodes with children
+            let expandButton = '';
+            if (node.children && node.children.length > 0) {
+                const expandIcon = node.isExpanded ? 'bi-chevron-down' : 'bi-chevron-right';
+                expandButton = `<i class="bi ${expandIcon} expand-icon" data-path="${node.path}"></i>`;
+            } else {
+                expandButton = '<span class="expand-spacer"></span>'; // Spacer for alignment
+            }
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.id = `folder-${folder.path}`;
-            checkbox.checked = this.selectedFolders.includes(folder.path);
-            checkbox.addEventListener('change', () => this.toggleFolder(folder.path));
+            checkbox.id = `folder-${node.path}`;
+            checkbox.checked = this.selectedFolders.includes(node.path);
+            checkbox.addEventListener('change', () => this.toggleFolder(node.path));
             
             const label = document.createElement('label');
-            label.htmlFor = `folder-${folder.path}`;
+            label.htmlFor = `folder-${node.path}`;
             
             // Check if this is a ZIP archive folder
-            const isZipFolder = folder.path.toLowerCase().endsWith('.zip');
+            const isZipFolder = node.path.toLowerCase().endsWith('.zip');
             const archiveIcon = isZipFolder ? '<i class="bi bi-archive-fill" style="margin-left: 4px; color: #888;"></i>' : '';
+            const folderIcon = isZipFolder ? '' : '<i class="bi bi-folder-fill" style="margin-right: 4px; color: #ffd700;"></i>';
             
-            label.innerHTML = `
-                <span class="folder-name">${folder.name}${archiveIcon}</span>
-                <span class="folder-count">(${folder.imageCount})</span>
+            folderItem.innerHTML = `
+                ${expandButton}
+                <input type="checkbox" id="folder-${node.path}" ${this.selectedFolders.includes(node.path) ? 'checked' : ''}>
+                <label for="folder-${node.path}">
+                    ${folderIcon}
+                    <span class="folder-name">${node.name}${archiveIcon}</span>
+                    <span class="folder-count">(${node.imageCount})</span>
+                </label>
             `;
             
-            folderItem.appendChild(checkbox);
-            folderItem.appendChild(label);
-            folderList.appendChild(folderItem);
+            // Re-add event listeners since innerHTML overwrites them
+            const newCheckbox = folderItem.querySelector('input[type="checkbox"]');
+            newCheckbox.addEventListener('change', () => this.toggleFolder(node.path));
+            
+            // Add expand/collapse functionality
+            const expandIcon = folderItem.querySelector('.expand-icon');
+            if (expandIcon) {
+                expandIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleFolderExpansion(node.path);
+                });
+            }
+            
+            container.appendChild(folderItem);
+            
+            // Render children if expanded
+            if (node.isExpanded && node.children && node.children.length > 0) {
+                this.renderFolderTreeNodes(node.children, container, level + 1);
+            }
         });
+    }
+
+    toggleFolderExpansion(folderPath) {
+        // Find the node in the tree and toggle its expansion
+        const toggleNodeExpansion = (nodes) => {
+            for (const node of nodes) {
+                if (node.path === folderPath) {
+                    node.isExpanded = !node.isExpanded;
+                    return true;
+                }
+                if (node.children && toggleNodeExpansion(node.children)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        
+        if (this.folderTree) {
+            toggleNodeExpansion(this.folderTree);
+            this.renderFolderList(this.folderTree); // Re-render the tree
+        }
     }
 
     toggleFolder(folderPath) {
