@@ -557,10 +557,18 @@ body {
 
 .nsfw-indicator.list-view {
     position: absolute;
-    top: 32px;
+    top: 36px;
     right: 80px;
     left: auto;
     font-size: 16px;
+}
+
+/* Override Bootstrap Icons positioning for list view */
+.photo-item-list .favorite-indicator.list-view i::before,
+.photo-item-list .nsfw-indicator.list-view i::before {
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .pagination-container {
