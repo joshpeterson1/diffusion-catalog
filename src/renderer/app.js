@@ -14,6 +14,7 @@ class PhotoCatalogApp {
         this.includeNsfw = true;
         this.selectedFolders = [];
         this.totalPhotosInDatabase = 0;
+        this.thumbnailDensity = 'medium'; // 'small', 'medium', 'large'
         
         this.initializeEventListeners();
         
@@ -77,6 +78,9 @@ class PhotoCatalogApp {
         document.getElementById('nsfwFilter').addEventListener('click', () => this.toggleNsfw());
         document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
         document.getElementById('sortOrder').addEventListener('change', () => this.refreshPhotos());
+        
+        // Density control
+        document.getElementById('densitySelect').addEventListener('change', (e) => this.changeDensity(e.target.value));
 
         // Pagination
         document.getElementById('prevPageBtn').addEventListener('click', () => this.previousPage());
@@ -261,7 +265,7 @@ class PhotoCatalogApp {
         const gallery = document.getElementById('galleryGrid');
         if (!gallery) {
             console.log('Gallery element not found, using fallback dimensions');
-            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 20 };
+            this.gridDimensions = { cols: 5, rows: 4, photosPerPage: 20, imageSize: 160, spacing: 15 };
             return;
         }
 
@@ -271,106 +275,44 @@ class PhotoCatalogApp {
         const galleryRect = gallery.getBoundingClientRect();
         console.log('Gallery rect:', galleryRect);
         
-        // If gallery has no dimensions yet, try to get parent dimensions or use fallback
+        // Get available space
+        let availableWidth, availableHeight;
+        
         if (galleryRect.width === 0 || galleryRect.height === 0) {
             console.log('Gallery has no dimensions, checking parent...');
             const parent = gallery.parentElement;
             if (parent) {
                 const parentRect = parent.getBoundingClientRect();
-                console.log('Parent rect:', parentRect);
                 if (parentRect.width > 0 && parentRect.height > 0) {
-                    // Use parent dimensions minus some padding
-                    const availableWidth = parentRect.width - 80;
-                    const availableHeight = parentRect.height - 120;
-                    
-                    const baseSpacing = 20;
-                    const minImageSize = 180;
-                    const maxImageSize = 220;
-                    const optimalImageSize = 200;
-                    
-                    let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
-                    const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
-                    
-                    const maxColsForUltrawide = availableWidth > 2500 ? 8 : 12;
-                    const cols = Math.max(2, Math.min(maxCols, maxColsForUltrawide));
-                    const rows = Math.max(2, Math.min(maxRows, 8));
-                    
-                    let imageSize, spacing;
-                    if (rows >= 4 && cols >= 8) {
-                        imageSize = optimalImageSize;
-                        spacing = Math.max(baseSpacing, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
-                    } else {
-                        imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
-                        spacing = baseSpacing;
-                        
-                        if (imageSize > maxImageSize) {
-                            imageSize = maxImageSize;
-                            spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
-                        }
-                        
-                        if (imageSize < minImageSize) {
-                            imageSize = minImageSize;
-                            spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
-                        }
-                    }
-                    
-                    this.gridDimensions = {
-                        cols: cols,
-                        rows: rows,
-                        photosPerPage: cols * rows,
-                        imageSize: imageSize,
-                        spacing: spacing
-                    };
-                    
-                    console.log(`Grid dimensions from parent: ${cols}x${rows} = ${this.gridDimensions.photosPerPage} photos per page`);
+                    availableWidth = parentRect.width - 40; // Account for padding
+                    availableHeight = parentRect.height - 40;
+                } else {
+                    // Fallback
+                    this.gridDimensions = { cols: 5, rows: 4, photosPerPage: 20, imageSize: 160, spacing: 15 };
                     return;
                 }
+            } else {
+                // Fallback
+                this.gridDimensions = { cols: 5, rows: 4, photosPerPage: 20, imageSize: 160, spacing: 15 };
+                return;
             }
-            
-            console.log('Using fallback dimensions');
-            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 20 };
-            return;
-        }
-
-        const availableWidth = galleryRect.width - 40; // Account for padding
-        const availableHeight = galleryRect.height - 40;
-
-        const baseSpacing = 20;
-        const minImageSize = 180;
-        const maxImageSize = 220; // Reduced max to prevent oversized images
-        const optimalImageSize = 200; // Target size for stable layout
-
-        // Calculate maximum columns that fit with base spacing
-        let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
-        const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
-
-        // Ensure minimum of 2x2 and maximum reasonable limits (stricter for ultrawide)
-        const maxColsForUltrawide = availableWidth > 2500 ? 8 : 12;
-        const cols = Math.max(2, Math.min(maxCols, maxColsForUltrawide));
-        const rows = Math.max(2, Math.min(maxRows, 8));
-
-        // For optimal layouts (4 rows, 8+ columns), use stable sizing
-        let imageSize, spacing;
-        if (rows >= 4 && cols >= 8) {
-            imageSize = optimalImageSize;
-            spacing = Math.max(baseSpacing, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
         } else {
-            // Calculate actual image size based on available space
-            imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
-            spacing = baseSpacing;
-            
-            // Cap the image size to prevent oversized images
-            if (imageSize > maxImageSize) {
-                imageSize = maxImageSize;
-                spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
-            }
-            
-            // Ensure minimum image size is maintained
-            if (imageSize < minImageSize) {
-                imageSize = minImageSize;
-                spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
-            }
+            availableWidth = galleryRect.width - 40;
+            availableHeight = galleryRect.height - 40;
         }
+
+        // Define thumbnail sizes and spacing based on density
+        const densitySettings = {
+            small: { imageSize: 120, spacing: 12 },
+            medium: { imageSize: 160, spacing: 15 },
+            large: { imageSize: 200, spacing: 20 }
+        };
+
+        const { imageSize, spacing } = densitySettings[this.thumbnailDensity] || densitySettings.medium;
+
+        // Calculate how many columns and rows fit
+        const cols = Math.max(2, Math.floor((availableWidth + spacing) / (imageSize + spacing)));
+        const rows = Math.max(2, Math.floor((availableHeight + spacing) / (imageSize + spacing)));
 
         this.gridDimensions = {
             cols: cols,
@@ -380,7 +322,7 @@ class PhotoCatalogApp {
             spacing: spacing
         };
 
-        console.log(`Grid dimensions: ${cols}x${rows} = ${this.gridDimensions.photosPerPage} photos per page`);
+        console.log(`Grid dimensions (${this.thumbnailDensity}): ${cols}x${rows} = ${this.gridDimensions.photosPerPage} photos per page`);
     }
 
     updateGridLayout() {
@@ -1403,6 +1345,15 @@ class PhotoCatalogApp {
             console.log('Gallery refreshed automatically after file changes');
         } catch (error) {
             console.error('Error handling photos updated event:', error);
+        }
+    }
+
+    changeDensity(density) {
+        this.thumbnailDensity = density;
+        this.calculateGridDimensions();
+        if (this.viewMode === 'grid') {
+            this.updateGridLayout();
+            this.loadPhotos(true); // Reload with new page size
         }
     }
 

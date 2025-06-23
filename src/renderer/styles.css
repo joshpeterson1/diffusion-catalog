@@ -84,6 +84,32 @@ body {
     gap: 15px;
 }
 
+.density-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.density-controls label {
+    font-size: 14px;
+    color: #cccccc;
+}
+
+.density-controls select {
+    padding: 6px 8px;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    background-color: #3a3a3a;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.density-controls select:focus {
+    border-color: #007acc;
+    outline: none;
+}
+
 .view-controls {
     display: flex;
     gap: 4px;
