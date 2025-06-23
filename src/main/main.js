@@ -22,6 +22,9 @@ class PhotoCatalogApp {
 
     // Initialize file watcher (will set mainWindow reference later)
     this.fileWatcher = new FileWatcher(this.database, this.metadataExtractor);
+    
+    // Restore watched directories from database
+    await this.fileWatcher.restoreWatchedDirectories();
 
     // Set up IPC handlers
     this.setupIpcHandlers();

@@ -77,6 +77,9 @@ class FileWatcher {
         return { success: false, message: 'Selected path must be a directory or ZIP file' };
       }
       
+      // Save to database for persistence
+      await this.saveWatchedDirectory(dirPath);
+      
       // End timing and update vitals
       const scanEndTime = Date.now();
       const scanDuration = scanEndTime - scanStartTime;
@@ -105,6 +108,10 @@ class FileWatcher {
     if (watcher) {
       await watcher.close();
       this.watchers.delete(dirPath);
+      
+      // Remove from database
+      await this.removeWatchedDirectory(dirPath);
+      
       return { success: true, message: 'Directory removed successfully' };
     }
     return { success: false, message: 'Directory not found' };
@@ -320,9 +327,86 @@ class FileWatcher {
     };
   }
 
+  async saveWatchedDirectory(dirPath) {
+    try {
+      const stmt = this.database.db.prepare(`
+        INSERT OR REPLACE INTO watch_directories (path, added_date)
+        VALUES (?, ?)
+      `);
+      stmt.run(dirPath, new Date().toISOString());
+      console.log(`Saved watched directory to database: ${dirPath}`);
+    } catch (error) {
+      console.error('Error saving watched directory:', error);
+    }
+  }
+
+  async removeWatchedDirectory(dirPath) {
+    try {
+      const stmt = this.database.db.prepare('DELETE FROM watch_directories WHERE path = ?');
+      stmt.run(dirPath);
+      console.log(`Removed watched directory from database: ${dirPath}`);
+    } catch (error) {
+      console.error('Error removing watched directory:', error);
+    }
+  }
+
+  async restoreWatchedDirectories() {
+    try {
+      const stmt = this.database.db.prepare('SELECT path FROM watch_directories');
+      const watchedDirs = stmt.all();
+      
+      console.log(`Restoring ${watchedDirs.length} watched directories from database`);
+      
+      for (const { path: dirPath } of watchedDirs) {
+        try {
+          // Check if path still exists
+          await fs.access(dirPath);
+          
+          const stats = await fs.stat(dirPath);
+          
+          if (stats.isDirectory()) {
+            // Create watcher for directory
+            const watcher = chokidar.watch(dirPath, {
+              ignored: /(^|[\/\\])\../, // ignore dotfiles
+              persistent: true,
+              ignoreInitial: true // Don't re-scan on restore
+            });
+
+            // Set up event handlers
+            watcher
+              .on('add', (filePath) => {
+                console.log(`WATCHER ADD: ${filePath}`);
+                this.handleFileAdded(filePath);
+              })
+              .on('unlink', (filePath) => {
+                console.log(`WATCHER UNLINK: ${filePath}`);
+                this.handleFileRemoved(filePath);
+              })
+              .on('error', (error) => console.error('Watcher error:', error));
+
+            this.watchers.set(dirPath, watcher);
+            console.log(`Restored watcher for directory: ${dirPath}`);
+          } else if (stats.isFile() && path.extname(dirPath).toLowerCase() === '.zip') {
+            // For ZIP files, just add to watchers map (no actual watcher needed)
+            this.watchers.set(dirPath, null);
+            console.log(`Restored ZIP file reference: ${dirPath}`);
+          }
+        } catch (error) {
+          console.error(`Failed to restore watched directory ${dirPath}:`, error);
+          // Remove invalid path from database
+          await this.removeWatchedDirectory(dirPath);
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring watched directories:', error);
+    }
+  }
+
   close() {
     for (const watcher of this.watchers.values()) {
-      watcher.close();
+      if (watcher) {
+        watcher.close();
+      }
     }
     this.watchers.clear();
   }
