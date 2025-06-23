@@ -29,10 +29,15 @@ class PhotoCatalogApp {
         // Search functionality with more robust event binding
         const searchBtn = document.getElementById('searchBtn');
         const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
         
         // Use onclick instead of addEventListener to ensure it always works
         if (searchBtn) {
             searchBtn.onclick = () => this.handleSearch();
+        }
+        
+        if (clearSearchBtn) {
+            clearSearchBtn.onclick = () => this.clearSearch();
         }
         
         if (searchInput) {
@@ -792,14 +797,28 @@ class PhotoCatalogApp {
                 this.renderGallery();
                 await this.updatePhotoCount();
                 this.updatePaginationControls();
+                this.updateClearSearchButton();
             } catch (error) {
                 console.error('Error searching photos:', error);
             } finally {
                 this.showLoading(false);
             }
         } else {
-            this.currentSearchQuery = null;
-            this.refreshPhotos();
+            this.clearSearch();
+        }
+    }
+
+    clearSearch() {
+        document.getElementById('searchInput').value = '';
+        this.currentSearchQuery = null;
+        this.updateClearSearchButton();
+        this.refreshPhotos();
+    }
+
+    updateClearSearchButton() {
+        const clearBtn = document.getElementById('clearSearchBtn');
+        if (clearBtn) {
+            clearBtn.style.display = this.currentSearchQuery ? 'inline-block' : 'none';
         }
     }
 
@@ -1252,6 +1271,9 @@ class PhotoCatalogApp {
             
             // Apply filters after config is loaded
             this.refreshPhotos();
+            
+            // Update clear search button state
+            this.updateClearSearchButton();
             
         } catch (error) {
             console.error('Error loading config:', error);
