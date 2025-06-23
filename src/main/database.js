@@ -440,50 +440,92 @@ class DatabaseManager {
   }
 
   buildFolderTree(folders) {
-    const tree = [];
-    const pathMap = new Map();
+    if (folders.length === 0) return [];
     
-    // Normalize paths and create path segments
-    folders.forEach(folder => {
-      const normalizedPath = folder.folder_path.replace(/\\/g, '/');
-      const segments = normalizedPath.split('/').filter(segment => segment.length > 0);
+    // Get watched directories to determine root paths
+    const watchedDirs = this.db.prepare('SELECT path FROM watch_directories').all();
+    const watchedPaths = watchedDirs.map(dir => dir.path.replace(/\\/g, '/'));
+    
+    // Group folders by their watched directory root
+    const rootTrees = [];
+    
+    watchedPaths.forEach(watchedPath => {
+      const relevantFolders = folders.filter(folder => {
+        const normalizedFolderPath = folder.folder_path.replace(/\\/g, '/');
+        return normalizedFolderPath.startsWith(watchedPath);
+      });
       
-      // Build tree structure
-      let currentLevel = tree;
-      let currentPath = '';
+      if (relevantFolders.length === 0) return;
       
-      segments.forEach((segment, index) => {
-        currentPath += (currentPath ? '/' : '') + segment;
+      // Create root node for this watched directory
+      const rootName = watchedPath.split('/').pop() || watchedPath;
+      const rootNode = {
+        name: rootName,
+        path: watchedPath,
+        imageCount: 0,
+        children: [],
+        isExpanded: true, // Expand root by default
+        level: 0
+      };
+      
+      // Build subtree for this watched directory
+      relevantFolders.forEach(folder => {
+        const normalizedPath = folder.folder_path.replace(/\\/g, '/');
         
-        // Check if this path segment already exists at current level
-        let existingNode = currentLevel.find(node => node.name === segment && node.path === currentPath);
-        
-        if (!existingNode) {
-          // Create new node
-          const isLeaf = index === segments.length - 1;
-          existingNode = {
-            name: segment,
-            path: currentPath,
-            imageCount: isLeaf ? folder.image_count : 0,
-            children: [],
-            isExpanded: false,
-            level: index
-          };
-          currentLevel.push(existingNode);
-          pathMap.set(currentPath, existingNode);
-        } else if (index === segments.length - 1) {
-          // Update image count for leaf node
-          existingNode.imageCount = folder.image_count;
+        // Get relative path from watched directory
+        let relativePath = normalizedPath;
+        if (normalizedPath.startsWith(watchedPath)) {
+          relativePath = normalizedPath.substring(watchedPath.length);
+          if (relativePath.startsWith('/')) {
+            relativePath = relativePath.substring(1);
+          }
         }
         
-        currentLevel = existingNode.children;
+        // Skip if this is the root directory itself
+        if (!relativePath) {
+          rootNode.imageCount += folder.image_count;
+          return;
+        }
+        
+        const segments = relativePath.split('/').filter(segment => segment.length > 0);
+        
+        // Build tree structure starting from root
+        let currentLevel = rootNode.children;
+        let currentPath = watchedPath;
+        
+        segments.forEach((segment, index) => {
+          currentPath += '/' + segment;
+          
+          // Check if this path segment already exists at current level
+          let existingNode = currentLevel.find(node => node.name === segment);
+          
+          if (!existingNode) {
+            // Create new node
+            const isLeaf = index === segments.length - 1;
+            existingNode = {
+              name: segment,
+              path: currentPath,
+              imageCount: isLeaf ? folder.image_count : 0,
+              children: [],
+              isExpanded: false,
+              level: index + 1
+            };
+            currentLevel.push(existingNode);
+          } else if (index === segments.length - 1) {
+            // Update image count for leaf node
+            existingNode.imageCount = folder.image_count;
+          }
+          
+          currentLevel = existingNode.children;
+        });
       });
+      
+      // Calculate total image counts for this tree
+      this.calculateParentCounts([rootNode]);
+      rootTrees.push(rootNode);
     });
     
-    // Calculate total image counts for parent folders
-    this.calculateParentCounts(tree);
-    
-    return tree;
+    return rootTrees;
   }
 
   calculateParentCounts(nodes) {
