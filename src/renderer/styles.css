@@ -513,10 +513,16 @@ body {
     padding: 2px 4px;
     transition: all 0.2s ease;
     color: #888;
+    opacity: 0;
 }
 
 .favorite-indicator.active {
     color: #ffd700;
+    opacity: 1;
+}
+
+.photo-item:hover .favorite-indicator {
+    opacity: 1;
 }
 
 .favorite-indicator:hover {
@@ -535,10 +541,16 @@ body {
     padding: 2px 4px;
     transition: all 0.2s ease;
     color: #888;
+    opacity: 0;
 }
 
 .nsfw-indicator.active {
     color: #ff4444;
+    opacity: 1;
+}
+
+.photo-item:hover .nsfw-indicator {
+    opacity: 1;
 }
 
 .nsfw-indicator:hover {
