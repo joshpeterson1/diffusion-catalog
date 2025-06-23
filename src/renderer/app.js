@@ -1168,7 +1168,7 @@ class PhotoCatalogApp {
         // Load data
         await this.loadWatchedDirectories();
         await this.loadSubfolders();
-        await this.loadPhotos();
+        // Don't call loadPhotos() here since refreshPhotos() is called in loadConfig()
     }
 
     async loadConfig() {
@@ -1193,6 +1193,9 @@ class PhotoCatalogApp {
             
             // Update view mode
             this.setViewMode(this.viewMode);
+            
+            // Apply filters after config is loaded
+            this.refreshPhotos();
             
         } catch (error) {
             console.error('Error loading config:', error);
