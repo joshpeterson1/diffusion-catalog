@@ -432,6 +432,11 @@ class PhotoCatalogApp {
           return { success: false, message: 'No directories are being watched. Add directories first.' };
         }
 
+        // Clear the metadata extractor queue first to prevent foreign key errors
+        if (this.metadataExtractor) {
+          this.metadataExtractor.clearQueue();
+        }
+
         // Clear existing data
         const clearResult = await this.database.clearAll();
         if (!clearResult.success) {
