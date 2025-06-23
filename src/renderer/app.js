@@ -325,7 +325,6 @@ class PhotoCatalogApp {
         } finally {
             this.isLoading = false;
             this.showLoading(false);
-            this.restoreInputFocus();
         }
     }
 
@@ -777,7 +776,6 @@ class PhotoCatalogApp {
             alert('Failed to add directory or ZIP file');
         } finally {
             this.showLoading(false);
-            this.restoreInputFocus();
         }
     }
 
@@ -806,29 +804,6 @@ class PhotoCatalogApp {
 
     showLoading(show) {
         document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
-        
-        // Always ensure search input remains enabled and focusable
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
-        
-        if (searchInput) {
-            searchInput.disabled = false;
-            searchInput.style.pointerEvents = 'auto';
-            searchInput.style.opacity = '1';
-            searchInput.removeAttribute('readonly');
-        }
-        
-        if (searchBtn) {
-            searchBtn.disabled = false;
-            searchBtn.style.pointerEvents = 'auto';
-        }
-        
-        // Additional restoration after loading completes
-        if (!show) {
-            setTimeout(() => {
-                this.restoreInputFocus();
-            }, 50);
-        }
     }
 
     async clearDatabase() {
@@ -982,17 +957,6 @@ class PhotoCatalogApp {
                 alert('Failed to rebuild database');
             } finally {
                 this.showLoading(false);
-                
-                // Force restore search functionality
-                setTimeout(() => {
-                    const searchBtn = document.getElementById('searchBtn');
-                    if (searchBtn) {
-                        searchBtn.onclick = () => this.handleSearch();
-                        searchBtn.disabled = false;
-                        searchBtn.style.pointerEvents = 'auto';
-                    }
-                    this.restoreInputFocus();
-                }, 100);
             }
         }
     }
@@ -1247,32 +1211,23 @@ class PhotoCatalogApp {
         
         if (searchInput) {
             searchInput.disabled = false;
-            searchInput.style.pointerEvents = 'auto';
-            searchInput.style.opacity = '1';
+            searchInput.style.pointerEvents = '';
+            searchInput.style.opacity = '';
             searchInput.removeAttribute('readonly');
-            searchInput.style.cursor = 'text';
-            
-            // Force a reflow to ensure the browser updates the element state
-            searchInput.offsetHeight;
+            searchInput.style.cursor = '';
         }
         
         if (searchBtn) {
             searchBtn.disabled = false;
-            searchBtn.style.pointerEvents = 'auto';
-            searchBtn.style.cursor = 'pointer';
-            
-            // Force a reflow
-            searchBtn.offsetHeight;
-            
-            // Re-attach click handler to ensure it works
-            searchBtn.onclick = () => this.handleSearch();
+            searchBtn.style.pointerEvents = '';
+            searchBtn.style.cursor = '';
         }
         
-        // Ensure all buttons are enabled
+        // Ensure all buttons are enabled but don't override their styles
         const allButtons = document.querySelectorAll('button');
         allButtons.forEach(btn => {
             btn.disabled = false;
-            btn.style.pointerEvents = 'auto';
+            btn.style.pointerEvents = '';
         });
     }
 
