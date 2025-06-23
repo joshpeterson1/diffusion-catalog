@@ -437,6 +437,21 @@ class PhotoCatalogApp {
         return { success: false, message: error.message };
       }
     });
+
+    // Get watched directories handler
+    ipcMain.handle('get-watched-directories', async () => {
+      try {
+        const watchedDirs = Array.from(this.fileWatcher.watchers.keys());
+        return watchedDirs.map(dirPath => ({
+          path: dirPath,
+          name: require('path').basename(dirPath),
+          isActive: true
+        }));
+      } catch (error) {
+        console.error('Error getting watched directories:', error);
+        return [];
+      }
+    });
   }
 }
 

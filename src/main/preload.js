@@ -55,5 +55,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getVitals: () => ipcRenderer.invoke('get-vitals'),
   
   // Rebuild database
-  rebuildDatabase: () => ipcRenderer.invoke('rebuild-database')
+  rebuildDatabase: () => ipcRenderer.invoke('rebuild-database'),
+  
+  // Watched directories
+  getWatchedDirectories: () => ipcRenderer.invoke('get-watched-directories')
 });
