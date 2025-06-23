@@ -199,9 +199,9 @@ class PhotoCatalogApp {
               const { dialog, shell } = require('electron');
               dialog.showMessageBox(this.mainWindow, {
                 type: 'info',
-                title: 'About AI Photo Catalog',
-                message: 'AI Photo Catalog',
-                detail: 'Made by somber with love\n\nA powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.\n\nHeavily inspired by Cocktailpeanut\'s Breadboard.',
+                title: 'About Diffusion Catalog',
+                message: 'Diffusion Catalog',
+                detail: 'Made by somber with love\n\nA powerful tool for organizing and managing diffusion-generated images with metadata extraction and tagging capabilities.\n\nHeavily inspired by Cocktailpeanut\'s Breadboard.',
                 icon: path.join(__dirname, '..', '..', 'icon.png'),
                 buttons: ['Close', 'View Project', 'Open Issue']
               }).then((result) => {
