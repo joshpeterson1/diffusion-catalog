@@ -1,6 +1,6 @@
 {
   "name": "diffusion-catalog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Desktop app for managing and cataloging diffusion-generated photos",
   "main": "src/main/main.js",
   "author": "somber",
@@ -37,11 +37,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
