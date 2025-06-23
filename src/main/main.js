@@ -442,11 +442,14 @@ class PhotoCatalogApp {
     ipcMain.handle('get-watched-directories', async () => {
       try {
         const watchedDirs = Array.from(this.fileWatcher.watchers.keys());
-        return watchedDirs.map(dirPath => ({
+        console.log('Main: Getting watched directories, found:', watchedDirs);
+        const result = watchedDirs.map(dirPath => ({
           path: dirPath,
           name: require('path').basename(dirPath),
           isActive: true
         }));
+        console.log('Main: Returning watched directories:', result);
+        return result;
       } catch (error) {
         console.error('Error getting watched directories:', error);
         return [];
