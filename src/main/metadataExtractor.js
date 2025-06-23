@@ -29,6 +29,11 @@ class MetadataExtractor {
     }
   }
 
+  clearQueue() {
+    console.log(`Clearing metadata extraction queue (${this.queue.length} items)`);
+    this.queue = [];
+  }
+
   async processQueue() {
     this.processing = true;
     

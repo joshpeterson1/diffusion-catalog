@@ -356,6 +356,11 @@ class PhotoCatalogApp {
 
     // Clear database handler
     ipcMain.handle('clear-database', async () => {
+      // Clear the metadata extractor queue first to prevent foreign key errors
+      if (this.metadataExtractor) {
+        this.metadataExtractor.clearQueue();
+      }
+      
       return await this.database.clearAll();
     });
 
