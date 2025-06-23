@@ -58,5 +58,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   rebuildDatabase: () => ipcRenderer.invoke('rebuild-database'),
   
   // Watched directories
-  getWatchedDirectories: () => ipcRenderer.invoke('get-watched-directories')
+  getWatchedDirectories: () => ipcRenderer.invoke('get-watched-directories'),
+  
+  // Config management
+  getConfig: () => ipcRenderer.invoke('get-config'),
+  updateConfig: (updates) => ipcRenderer.invoke('update-config', updates),
+  resetConfig: () => ipcRenderer.invoke('reset-config')
 });

@@ -15,6 +15,7 @@ class PhotoCatalogApp {
         this.selectedFolders = [];
         this.totalPhotosInDatabase = 0;
         this.thumbnailDensity = 'medium'; // 'small', 'medium', 'large'
+        this.config = {};
         
         this.initializeEventListeners();
         
@@ -76,8 +77,14 @@ class PhotoCatalogApp {
         // Filters
         document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
         document.getElementById('nsfwFilter').addEventListener('click', () => this.toggleNsfw());
-        document.getElementById('sortBy').addEventListener('change', () => this.refreshPhotos());
-        document.getElementById('sortOrder').addEventListener('change', () => this.refreshPhotos());
+        document.getElementById('sortBy').addEventListener('change', () => {
+            this.refreshPhotos();
+            this.saveConfig(); // Save sort setting
+        });
+        document.getElementById('sortOrder').addEventListener('change', () => {
+            this.refreshPhotos();
+            this.saveConfig(); // Save sort setting
+        });
         
         // Density control
         document.getElementById('densitySelect').addEventListener('change', (e) => this.changeDensity(e.target.value));
@@ -366,6 +373,7 @@ class PhotoCatalogApp {
         }
         
         this.renderGallery();
+        this.saveConfig(); // Save setting
     }
 
     async loadPhotos(reset = true) {
@@ -780,6 +788,7 @@ class PhotoCatalogApp {
         button.classList.toggle('active', this.favoritesOnly);
         console.log('TOGGLE FAVORITES:', this.favoritesOnly);
         this.refreshPhotos();
+        this.saveConfig(); // Save setting
     }
 
     toggleNsfw() {
@@ -788,6 +797,7 @@ class PhotoCatalogApp {
         button.classList.toggle('active', this.includeNsfw);
         console.log('TOGGLE NSFW:', this.includeNsfw);
         this.refreshPhotos();
+        this.saveConfig(); // Save setting
     }
 
     initializeFilters() {
@@ -1141,6 +1151,9 @@ class PhotoCatalogApp {
         // Additional delay to ensure layout is complete
         await new Promise(resolve => setTimeout(resolve, 200));
         
+        // Load config first
+        await this.loadConfig();
+        
         // Force a layout calculation
         const gallery = document.getElementById('galleryGrid');
         if (gallery) {
@@ -1157,6 +1170,52 @@ class PhotoCatalogApp {
         await this.loadWatchedDirectories();
         await this.loadSubfolders();
         await this.loadPhotos();
+    }
+
+    async loadConfig() {
+        try {
+            this.config = await window.electronAPI.getConfig();
+            console.log('Loaded config:', this.config);
+            
+            // Apply config to UI
+            this.thumbnailDensity = this.config.thumbnailDensity || 'medium';
+            this.includeNsfw = this.config.includeNsfw !== undefined ? this.config.includeNsfw : true;
+            this.favoritesOnly = this.config.favoritesOnly || false;
+            this.viewMode = this.config.viewMode || 'grid';
+            
+            // Update UI elements
+            document.getElementById('densitySelect').value = this.thumbnailDensity;
+            document.getElementById('sortBy').value = this.config.sortBy || 'date_taken';
+            document.getElementById('sortOrder').value = this.config.sortOrder || 'DESC';
+            
+            // Update filter button states
+            document.getElementById('nsfwFilter').classList.toggle('active', this.includeNsfw);
+            document.getElementById('favoritesFilter').classList.toggle('active', this.favoritesOnly);
+            
+            // Update view mode
+            this.setViewMode(this.viewMode);
+            
+        } catch (error) {
+            console.error('Error loading config:', error);
+        }
+    }
+
+    async saveConfig() {
+        try {
+            const configUpdates = {
+                thumbnailDensity: this.thumbnailDensity,
+                includeNsfw: this.includeNsfw,
+                favoritesOnly: this.favoritesOnly,
+                sortBy: document.getElementById('sortBy').value,
+                sortOrder: document.getElementById('sortOrder').value,
+                viewMode: this.viewMode
+            };
+            
+            this.config = await window.electronAPI.updateConfig(configUpdates);
+            console.log('Config saved:', this.config);
+        } catch (error) {
+            console.error('Error saving config:', error);
+        }
     }
 
     addClickToCopyListeners() {
@@ -1359,6 +1418,7 @@ class PhotoCatalogApp {
             this.updateGridLayout();
             this.loadPhotos(true); // Reload with new page size
         }
+        this.saveConfig(); // Save setting
     }
 
     formatFileSize(bytes) {

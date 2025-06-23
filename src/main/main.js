@@ -3,6 +3,7 @@ const path = require('path');
 const DatabaseManager = require('./database');
 const FileWatcher = require('./fileWatcher');
 const MetadataExtractor = require('./metadataExtractor');
+const ConfigManager = require('./configManager');
 
 class PhotoCatalogApp {
   constructor() {
@@ -10,9 +11,14 @@ class PhotoCatalogApp {
     this.database = null;
     this.fileWatcher = null;
     this.metadataExtractor = null;
+    this.configManager = null;
   }
 
   async initialize() {
+    // Initialize config manager
+    this.configManager = new ConfigManager();
+    await this.configManager.loadConfig();
+
     // Initialize database
     this.database = new DatabaseManager();
     await this.database.initialize();
@@ -495,6 +501,19 @@ class PhotoCatalogApp {
         console.error('Error getting watched directories:', error);
         return [];
       }
+    });
+
+    // Config handlers
+    ipcMain.handle('get-config', async () => {
+      return this.configManager.getConfig();
+    });
+
+    ipcMain.handle('update-config', async (event, updates) => {
+      return await this.configManager.updateConfig(updates);
+    });
+
+    ipcMain.handle('reset-config', async () => {
+      return await this.configManager.resetConfig();
     });
   }
 }
