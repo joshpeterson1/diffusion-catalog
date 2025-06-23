@@ -1058,6 +1058,8 @@ class PhotoCatalogApp {
                 const result = await window.electronAPI.clearDatabase();
                 if (result.success) {
                     alert('Database cleared successfully');
+                    // Reload subfolders and photos since database is now empty
+                    await this.loadSubfolders();
                     this.refreshPhotos();
                 } else {
                     alert(`Error: ${result.message}`);
