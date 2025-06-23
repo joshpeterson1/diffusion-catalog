@@ -230,9 +230,16 @@ class DatabaseManager {
   }
 
   async searchPhotos(searchQuery, filters = {}) {
+    console.log('SEARCH: Query:', searchQuery, 'Filters:', filters);
+    
     let query = `
-      SELECT i.*, u.is_favorite, u.is_nsfw, u.custom_tags, u.rating,
-             ai.prompt, ai.model
+      SELECT i.*, 
+             COALESCE(u.is_favorite, 0) as is_favorite, 
+             COALESCE(u.is_nsfw, 0) as is_nsfw, 
+             u.custom_tags, 
+             u.rating,
+             ai.prompt, 
+             ai.model
       FROM images i
       LEFT JOIN user_metadata u ON i.id = u.image_id
       LEFT JOIN ai_metadata ai ON i.id = ai.image_id
@@ -241,6 +248,7 @@ class DatabaseManager {
     
     const params = [];
     
+    // Add search term filter
     if (searchQuery) {
       query += ` AND (
         i.filename LIKE ? OR 
@@ -252,20 +260,47 @@ class DatabaseManager {
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
     
-    if (filters.isFavorite !== undefined) {
-      query += ' AND u.is_favorite = ?';
-      params.push(filters.isFavorite ? 1 : 0);
+    // Apply favorite filter if specified
+    if (filters.isFavorite === true) {
+      query += ' AND COALESCE(u.is_favorite, 0) = 1';
+      console.log('SEARCH: Added favorites filter');
     }
     
-    if (filters.isNsfw !== undefined) {
-      query += ' AND u.is_nsfw = ?';
-      params.push(filters.isNsfw ? 1 : 0);
+    // Apply NSFW filter if specified
+    if (filters.nsfwOnly === true) {
+      query += ' AND COALESCE(u.is_nsfw, 0) = 1';
+      console.log('SEARCH: Added NSFW-only filter');
+    } else if (filters.excludeNsfw === true) {
+      query += ' AND COALESCE(u.is_nsfw, 0) = 0';
+      console.log('SEARCH: Added NSFW exclusion filter');
+    }
+    
+    // Filter by selected folders if any are specified
+    if (filters.selectedFolders && filters.selectedFolders.length > 0) {
+      const folderConditions = filters.selectedFolders.map(() => {
+        return '(i.path LIKE ? OR i.archive_path = ?)';
+      }).join(' OR ');
+      query += ` AND (${folderConditions})`;
+      filters.selectedFolders.forEach(folder => {
+        if (folder.toLowerCase().endsWith('.zip')) {
+          params.push(`${folder}::%`, folder);
+        } else {
+          params.push(`${folder}%`, folder);
+        }
+      });
+      console.log('SEARCH: Added folder filters for:', filters.selectedFolders);
     }
     
     query += ' ORDER BY i.date_taken DESC LIMIT 500';
     
+    console.log('SEARCH: Final query:', query);
+    console.log('SEARCH: Final params:', params);
+    
     const stmt = this.db.prepare(query);
-    return stmt.all(...params);
+    const results = stmt.all(...params);
+    
+    console.log(`SEARCH: Found ${results.length} results`);
+    return results;
   }
 
   async updateUserMetadata(imageId, metadata) {

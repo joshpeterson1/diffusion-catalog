@@ -17,6 +17,7 @@ class PhotoCatalogApp {
         this.totalPhotosInDatabase = 0;
         this.thumbnailDensity = 'medium'; // 'small', 'medium', 'large'
         this.config = {};
+        this.currentSearchQuery = null; // Track current search query
         
         this.initializeEventListeners();
         
@@ -763,12 +764,31 @@ class PhotoCatalogApp {
 
     async handleSearch() {
         const query = document.getElementById('searchInput').value.trim();
+        this.currentSearchQuery = query; // Store current search query
         
         if (query) {
             try {
                 this.showLoading(true);
-                const results = await window.electronAPI.searchPhotos(query, this.currentFilters);
+                
+                // Build search filters with current filter state
+                const searchFilters = { ...this.currentFilters };
+                
+                // Add favorites filter if enabled
+                if (this.favoritesOnly) {
+                    searchFilters.isFavorite = true;
+                }
+                
+                // Add NSFW filters
+                if (this.nsfwOnly) {
+                    searchFilters.nsfwOnly = true;
+                } else if (!this.includeNsfw) {
+                    searchFilters.excludeNsfw = true;
+                }
+                
+                console.log('Search filters:', searchFilters);
+                const results = await window.electronAPI.searchPhotos(query, searchFilters);
                 this.photos = results;
+                this.totalPhotosInRange = results.length; // Update count for search results
                 this.renderGallery();
                 await this.updatePhotoCount();
                 this.updatePaginationControls();
@@ -778,6 +798,7 @@ class PhotoCatalogApp {
                 this.showLoading(false);
             }
         } else {
+            this.currentSearchQuery = null;
             this.refreshPhotos();
         }
     }
@@ -823,6 +844,12 @@ class PhotoCatalogApp {
     }
 
     refreshPhotos() {
+        // If we have an active search, re-run the search with new filters
+        if (this.currentSearchQuery) {
+            this.handleSearch();
+            return;
+        }
+        
         // Reset pagination
         this.currentPage = 1;
         this.currentOffset = 0;
