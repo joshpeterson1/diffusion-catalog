@@ -211,6 +211,87 @@ body {
     padding: 10px;
 }
 
+.no-watched-dirs {
+    color: #888;
+    font-size: 12px;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+}
+
+.watched-dir-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #2a2a2a;
+    border: 1px solid #404040;
+    transition: background-color 0.2s ease;
+}
+
+.watched-dir-item:hover {
+    background-color: #3a3a3a;
+}
+
+.watched-dir-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.watched-dir-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.watched-dir-name i {
+    color: #888;
+    font-size: 11px;
+}
+
+.dir-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+}
+
+.dir-status {
+    font-size: 10px;
+    margin-left: auto;
+}
+
+.dir-status.active {
+    color: #4CAF50;
+}
+
+.dir-status.inactive {
+    color: #888;
+}
+
+.remove-watched-dir-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.remove-watched-dir-btn:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+}
+
 .empty-state {
     display: flex;
     flex-direction: column;
