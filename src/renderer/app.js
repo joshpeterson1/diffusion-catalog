@@ -12,6 +12,7 @@ class PhotoCatalogApp {
         this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25 };
         this.currentPhotoIndex = -1;
         this.includeNsfw = true;
+        this.nsfwOnly = false;
         this.selectedFolders = [];
         this.totalPhotosInDatabase = 0;
         this.thumbnailDensity = 'medium'; // 'small', 'medium', 'large'
@@ -75,7 +76,7 @@ class PhotoCatalogApp {
 
         // Filters
         document.getElementById('favoritesFilter').addEventListener('click', () => this.toggleFavorites());
-        document.getElementById('nsfwFilter').addEventListener('click', () => this.toggleNsfw());
+        document.getElementById('nsfwFilter').addEventListener('click', (e) => this.toggleNsfw(e));
         document.getElementById('sortBy').addEventListener('change', () => {
             this.refreshPhotos();
             this.saveConfig(); // Save sort setting
@@ -790,11 +791,28 @@ class PhotoCatalogApp {
         this.saveConfig(); // Save setting
     }
 
-    toggleNsfw() {
-        this.includeNsfw = !this.includeNsfw;
-        const button = document.getElementById('nsfwFilter');
-        button.classList.toggle('active', this.includeNsfw);
-        console.log('TOGGLE NSFW:', this.includeNsfw);
+    toggleNsfw(event) {
+        if (event && event.shiftKey) {
+            // Shift+click: toggle NSFW-only mode
+            this.nsfwOnly = !this.nsfwOnly;
+            if (this.nsfwOnly) {
+                this.includeNsfw = true; // Must include NSFW to show only NSFW
+            }
+            const button = document.getElementById('nsfwFilter');
+            button.classList.toggle('nsfw-only', this.nsfwOnly);
+            button.classList.toggle('active', this.includeNsfw);
+            console.log('TOGGLE NSFW ONLY:', this.nsfwOnly);
+        } else {
+            // Regular click: toggle NSFW inclusion
+            this.includeNsfw = !this.includeNsfw;
+            if (!this.includeNsfw) {
+                this.nsfwOnly = false; // Can't show only NSFW if not including NSFW
+            }
+            const button = document.getElementById('nsfwFilter');
+            button.classList.toggle('active', this.includeNsfw);
+            button.classList.toggle('nsfw-only', this.nsfwOnly);
+            console.log('TOGGLE NSFW:', this.includeNsfw);
+        }
         this.refreshPhotos();
         this.saveConfig(); // Save setting
     }
@@ -831,8 +849,11 @@ class PhotoCatalogApp {
             console.log('NOT ADDING FAVORITES FILTER - SHOULD SHOW ALL PHOTOS');
         }
 
-        // Add NSFW filter - exclude NSFW unless explicitly included
-        if (!this.includeNsfw) {
+        // Add NSFW filter - exclude NSFW unless explicitly included, or show only NSFW
+        if (this.nsfwOnly) {
+            filters.nsfwOnly = true;
+            console.log('SHOWING ONLY NSFW CONTENT');
+        } else if (!this.includeNsfw) {
             filters.excludeNsfw = true;
             console.log('EXCLUDING NSFW CONTENT');
         } else {
@@ -1169,6 +1190,7 @@ class PhotoCatalogApp {
             // Apply config to UI
             this.thumbnailDensity = this.config.thumbnailDensity || 'medium';
             this.includeNsfw = this.config.includeNsfw !== undefined ? this.config.includeNsfw : true;
+            this.nsfwOnly = this.config.nsfwOnly || false;
             this.favoritesOnly = this.config.favoritesOnly || false;
             this.viewMode = this.config.viewMode || 'grid';
             
@@ -1178,7 +1200,9 @@ class PhotoCatalogApp {
             document.getElementById('sortOrder').value = this.config.sortOrder || 'DESC';
             
             // Update filter button states
-            document.getElementById('nsfwFilter').classList.toggle('active', this.includeNsfw);
+            const nsfwButton = document.getElementById('nsfwFilter');
+            nsfwButton.classList.toggle('active', this.includeNsfw);
+            nsfwButton.classList.toggle('nsfw-only', this.nsfwOnly);
             document.getElementById('favoritesFilter').classList.toggle('active', this.favoritesOnly);
             
             // Update view mode
@@ -1197,6 +1221,7 @@ class PhotoCatalogApp {
             const configUpdates = {
                 thumbnailDensity: this.thumbnailDensity,
                 includeNsfw: this.includeNsfw,
+                nsfwOnly: this.nsfwOnly,
                 favoritesOnly: this.favoritesOnly,
                 sortBy: document.getElementById('sortBy').value,
                 sortOrder: document.getElementById('sortOrder').value,
