@@ -553,6 +553,7 @@ body {
     right: 80px;
     left: auto;
     font-size: 16px;
+    margin: 2px;
 }
 
 .nsfw-indicator.list-view {
@@ -561,6 +562,7 @@ body {
     right: 80px;
     left: auto;
     font-size: 16px;
+    margin: 2px;
 }
 
 .pagination-container {
