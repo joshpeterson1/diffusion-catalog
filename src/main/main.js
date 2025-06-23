@@ -177,6 +177,12 @@ class PhotoCatalogApp {
           },
           { type: 'separator' },
           {
+            label: 'Scan Directories',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-scan-directories');
+            }
+          },
+          {
             label: 'Rebuild Database',
             click: async () => {
               this.mainWindow.webContents.send('menu-rebuild-db');
@@ -490,6 +496,11 @@ class PhotoCatalogApp {
         console.error('Error getting watched directories:', error);
         return [];
       }
+    });
+
+    // Scan directories handler
+    ipcMain.handle('scan-directories', async () => {
+      return await this.fileWatcher.scanAllWatchedDirectories();
     });
 
     // Config handlers

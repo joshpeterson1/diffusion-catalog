@@ -42,7 +42,8 @@ class FileWatcher {
       if (stats.isDirectory()) {
         // Handle directory
         console.log(`Scanning existing files in directory ${dirPath}...`);
-        fileCount = await this.scanExistingFiles(dirPath);
+        const scanResult = await this.scanExistingFiles(dirPath);
+        fileCount = scanResult.totalFiles || scanResult; // Handle both old and new return formats
         console.log(`Found ${fileCount} files`);
         
         // Create watcher for directory
@@ -348,19 +349,26 @@ class FileWatcher {
         caseSensitiveMatch: false
       });
 
+      let newFiles = 0;
+      
       // Process files but don't wait for metadata extraction
       const promises = [];
       for (const filePath of files) {
-        promises.push(this.handleFileAddedSync(filePath));
+        // Check if file already exists before processing
+        const existing = this.database.db.prepare('SELECT id FROM images WHERE path = ?').get(filePath);
+        if (!existing) {
+          promises.push(this.handleFileAddedSync(filePath));
+          newFiles++;
+        }
       }
       
       // Wait for all files to be added to database (but not metadata extraction)
       await Promise.all(promises);
       
-      return files.length;
+      return { totalFiles: files.length, newFiles };
     } catch (error) {
       console.error('Error scanning existing files:', error);
-      return 0;
+      return { totalFiles: 0, newFiles: 0 };
     }
   }
 
@@ -449,6 +457,117 @@ class FileWatcher {
       }
     } catch (error) {
       console.error('Error restoring watched directories:', error);
+    }
+  }
+
+  async scanAllWatchedDirectories() {
+    try {
+      const scanStartTime = Date.now();
+      this.vitals.lastScanStartTime = scanStartTime;
+      
+      // Get all watched directories from database
+      const stmt = this.database.db.prepare('SELECT path FROM watch_directories');
+      const watchedDirs = stmt.all();
+      
+      if (watchedDirs.length === 0) {
+        return { success: false, message: 'No directories are being watched. Add directories first.' };
+      }
+      
+      console.log(`Starting manual scan of ${watchedDirs.length} watched directories...`);
+      
+      let totalFilesProcessed = 0;
+      let newFilesAdded = 0;
+      
+      for (const { path: dirPath } of watchedDirs) {
+        try {
+          // Check if path still exists
+          await fs.access(dirPath);
+          const stats = await fs.stat(dirPath);
+          
+          if (stats.isDirectory()) {
+            console.log(`Scanning directory: ${dirPath}`);
+            const result = await this.scanExistingFiles(dirPath);
+            totalFilesProcessed += result.totalFiles;
+            newFilesAdded += result.newFiles;
+          } else if (stats.isFile() && path.extname(dirPath).toLowerCase() === '.zip') {
+            console.log(`Scanning ZIP file: ${dirPath}`);
+            const result = await this.scanZipFile(dirPath);
+            totalFilesProcessed += result.totalFiles;
+            newFilesAdded += result.newFiles;
+          }
+        } catch (error) {
+          console.error(`Failed to scan ${dirPath}:`, error);
+          // Continue with other directories even if one fails
+        }
+      }
+      
+      // Update vitals
+      const scanEndTime = Date.now();
+      const scanDuration = scanEndTime - scanStartTime;
+      
+      this.vitals.lastScanEndTime = scanEndTime;
+      this.vitals.lastScanDuration = scanDuration;
+      this.vitals.lastScanFileCount = totalFilesProcessed;
+      this.vitals.totalScansPerformed++;
+      this.vitals.totalScanTime += scanDuration;
+      this.vitals.averageScanTime = this.vitals.totalScanTime / this.vitals.totalScansPerformed;
+      
+      // Notify frontend if new files were added
+      if (newFilesAdded > 0 && this.mainWindow && this.mainWindow.webContents) {
+        this.mainWindow.webContents.send('photos-updated');
+      }
+      
+      console.log(`Manual scan completed: ${totalFilesProcessed} files processed, ${newFilesAdded} new files added in ${scanDuration}ms`);
+      
+      return {
+        success: true,
+        filesProcessed: totalFilesProcessed,
+        newFilesAdded: newFilesAdded,
+        scanDuration: `${scanDuration}ms`
+      };
+      
+    } catch (error) {
+      console.error('Error during manual scan:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async scanZipFile(zipPath) {
+    try {
+      const images = await this.extractImageListFromZip(zipPath);
+      let totalFiles = images.length;
+      let newFiles = 0;
+      
+      for (const imageInfo of images) {
+        const archiveImagePath = `${zipPath}::${imageInfo.entryName}`;
+        
+        // Check if this archive entry already exists
+        const existing = this.database.db.prepare('SELECT id FROM images WHERE path = ?').get(archiveImagePath);
+        if (existing) {
+          continue;
+        }
+
+        const imageId = await this.database.addImage({
+          path: archiveImagePath,
+          filename: imageInfo.filename,
+          fileSize: imageInfo.uncompressedSize || 0,
+          dateTaken: null,
+          width: null,
+          height: null,
+          hash: null,
+          isArchive: true,
+          archivePath: zipPath
+        });
+
+        // Queue for metadata extraction
+        this.metadataExtractor.queueImage(imageId, archiveImagePath);
+        newFiles++;
+      }
+      
+      return { totalFiles, newFiles };
+    } catch (error) {
+      console.error('Error scanning ZIP file:', error);
+      return { totalFiles: 0, newFiles: 0 };
     }
   }
 
