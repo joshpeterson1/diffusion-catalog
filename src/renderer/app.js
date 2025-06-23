@@ -1141,6 +1141,30 @@ class PhotoCatalogApp {
         }
     }
 
+    async updateDatabase() {
+        if (confirm('Update database by scanning all watched directories for new files?')) {
+            try {
+                this.showLoading(true);
+                console.log('Starting database update...');
+                const result = await window.electronAPI.updateDatabase();
+                console.log('Database update result:', result);
+                if (result.success) {
+                    alert(`Database update completed successfully!\n\nFiles processed: ${result.filesProcessed}\nNew files added: ${result.newFilesAdded}\nScan duration: ${result.scanDuration}`);
+                    // Reload subfolders and photos to show any new content
+                    await this.loadSubfolders();
+                    await this.loadPhotos(true);
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error updating database:', error);
+                alert('Failed to update database');
+            } finally {
+                this.showLoading(false);
+            }
+        }
+    }
+
     isValidDate(dateString) {
         const date = new Date(dateString);
         return date instanceof Date && !isNaN(date);
