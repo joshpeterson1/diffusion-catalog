@@ -362,13 +362,18 @@ class PhotoCatalogApp {
         document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
         document.getElementById('listViewBtn').classList.toggle('active', mode === 'list');
         
-        // Update gallery class
+        // Update gallery class and clear any conflicting inline styles
         const gallery = document.getElementById('galleryGrid');
         gallery.className = mode === 'grid' ? 'gallery-grid' : 'gallery-list';
         
         if (mode === 'grid') {
             this.calculateGridDimensions();
             this.updateGridLayout();
+        } else {
+            // Clear all grid-related inline styles for list view
+            gallery.style.gridTemplateColumns = '';
+            gallery.style.gap = '';
+            gallery.style.display = '';
         }
         
         this.renderGallery();

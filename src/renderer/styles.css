@@ -383,9 +383,9 @@ body {
     padding: 20px;
     overflow-y: auto;
     display: grid;
-    gap: 50px;
     align-content: start;
     justify-content: center;
+    /* gap and grid-template-columns will be set by JavaScript */
 }
 
 .gallery-list {
