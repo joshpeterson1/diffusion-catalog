@@ -127,6 +127,49 @@ class FileWatcher {
     }
   }
 
+  async handleFileAddedSync(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    
+    if (this.supportedExtensions.has(ext)) {
+      await this.handleImageFileSync(filePath);
+    } else if (this.supportedArchives.has(ext)) {
+      await this.handleArchiveFile(filePath);
+    }
+  }
+
+  async handleImageFileSync(filePath) {
+    try {
+      const stats = await fs.stat(filePath);
+      const filename = path.basename(filePath);
+      
+      // Check if file already exists in database
+      const existing = this.database.db.prepare('SELECT id FROM images WHERE path = ?').get(filePath);
+      if (existing) {
+        return;
+      }
+
+      // Add to database with basic info
+      const imageData = {
+        path: filePath,
+        filename: filename,
+        fileSize: stats.size,
+        dateTaken: stats.mtime.toISOString(),
+        width: null,
+        height: null,
+        hash: null,
+        isArchive: false
+      };
+
+      const imageId = await this.database.addImage(imageData);
+      
+      // Queue for metadata extraction (async, don't wait)
+      this.metadataExtractor.queueImage(imageId, filePath);
+      
+    } catch (error) {
+      console.error('Error handling image file:', error);
+    }
+  }
+
   async handleImageFile(filePath) {
     try {
       const stats = await fs.stat(filePath);
@@ -305,9 +348,14 @@ class FileWatcher {
         caseSensitiveMatch: false
       });
 
+      // Process files but don't wait for metadata extraction
+      const promises = [];
       for (const filePath of files) {
-        this.handleFileAdded(filePath); // Remove await - let metadata extraction happen async
+        promises.push(this.handleFileAddedSync(filePath));
       }
+      
+      // Wait for all files to be added to database (but not metadata extraction)
+      await Promise.all(promises);
       
       return files.length;
     } catch (error) {

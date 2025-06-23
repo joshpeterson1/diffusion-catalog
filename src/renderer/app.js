@@ -1344,8 +1344,7 @@ class PhotoCatalogApp {
 
     async handlePhotosUpdated() {
         try {
-            // Reload watched directories, subfolders, and photos
-            await this.loadWatchedDirectories();
+            // Reload subfolders and photos (watched directories don't change during file updates)
             await this.loadSubfolders();
             await this.loadPhotos(true);
             console.log('Gallery refreshed automatically after file changes');
