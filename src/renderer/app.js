@@ -261,7 +261,7 @@ class PhotoCatalogApp {
         const gallery = document.getElementById('galleryGrid');
         if (!gallery) {
             console.log('Gallery element not found, using fallback dimensions');
-            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 50 };
+            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 20 };
             return;
         }
 
@@ -283,7 +283,7 @@ class PhotoCatalogApp {
                     const availableWidth = parentRect.width - 80;
                     const availableHeight = parentRect.height - 120;
                     
-                    const spacing = 50;
+                    const spacing = 20;
                     const minImageSize = 120;
                     
                     const maxCols = Math.floor((availableWidth + spacing) / (minImageSize + spacing));
@@ -308,14 +308,14 @@ class PhotoCatalogApp {
             }
             
             console.log('Using fallback dimensions');
-            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 50 };
+            this.gridDimensions = { cols: 5, rows: 5, photosPerPage: 25, imageSize: 200, spacing: 20 };
             return;
         }
 
         const availableWidth = galleryRect.width - 40; // Account for padding
         const availableHeight = galleryRect.height - 40;
 
-        const spacing = 50;
+        const spacing = 20;
         const minImageSize = 120; // Minimum viable image size
 
         // Calculate maximum columns that fit with spacing
@@ -342,12 +342,17 @@ class PhotoCatalogApp {
 
     updateGridLayout() {
         const gallery = document.getElementById('galleryGrid');
-        if (!gallery || this.viewMode !== 'grid') return;
+        if (!gallery) return;
 
-        const { cols, imageSize, spacing } = this.gridDimensions;
-        
-        gallery.style.gridTemplateColumns = `repeat(${cols}, ${imageSize}px)`;
-        gallery.style.gap = `${spacing}px`;
+        if (this.viewMode === 'grid') {
+            const { cols, imageSize, spacing } = this.gridDimensions;
+            gallery.style.gridTemplateColumns = `repeat(${cols}, ${imageSize}px)`;
+            gallery.style.gap = `${spacing}px`;
+        } else {
+            // Clear grid styles for list view
+            gallery.style.gridTemplateColumns = '';
+            gallery.style.gap = '';
+        }
     }
 
     setViewMode(mode) {

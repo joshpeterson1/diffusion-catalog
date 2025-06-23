@@ -394,7 +394,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 12px;
 }
 
 .photo-item {
@@ -423,8 +423,8 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 2px 8px;
-    border-radius: 6px;
+    padding: 8px;
+    border-radius: 8px;
     background-color: #2a2a2a;
     cursor: pointer;
     transition: background-color 0.2s ease;
