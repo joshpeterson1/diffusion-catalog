@@ -378,15 +378,13 @@ class FileWatcher {
   async saveWatchedDirectory(dirPath) {
     try {
       const stmt = this.database.db.prepare(`
-        INSERT OR REPLACE INTO watch_directories (path, added_date)
-        VALUES (?, ?)
+        INSERT OR REPLACE INTO watch_directories (path)
+        VALUES (?)
       `);
-      stmt.run(dirPath, new Date().toISOString());
+      stmt.run(dirPath);
       console.log(`Saved watched directory to database: ${dirPath}`);
     } catch (error) {
       console.error('Error saving watched directory:', error);
-      console.error('Database object:', this.database);
-      console.error('Database.db object:', this.database.db);
     }
   }
 
