@@ -61,7 +61,6 @@ class PhotoCatalogApp {
         window.electronAPI.onMenuPreferences(() => this.openPreferences());
         window.electronAPI.onMenuClearFavorites(() => this.clearAllFavorites());
         window.electronAPI.onMenuClearNsfw(() => this.clearAllNsfw());
-        window.electronAPI.onMenuVitals(() => this.showVitals());
         window.electronAPI.onMenuRebuildDb(() => this.rebuildDatabase());
 
         // Listen for automatic photo updates from file watcher
@@ -934,7 +933,33 @@ class PhotoCatalogApp {
         try {
             const debug = await window.electronAPI.debugDatabase();
             console.log('Database debug info:', debug);
-            alert(`Images: ${debug.imageCount}, User Meta: ${debug.userMetaCount}, Favorites: ${debug.favoriteCount}`);
+            
+            let message = `Database & System Debug Info\n`;
+            message += `Generated: ${new Date(debug.timestamp).toLocaleString()}\n\n`;
+            
+            message += `Database Statistics:\n`;
+            message += `• Total images: ${debug.database.imageCount}\n`;
+            message += `• User metadata entries: ${debug.database.userMetaCount}\n`;
+            message += `• Favorite images: ${debug.database.favoriteCount}\n\n`;
+            
+            message += `File Watcher Performance:\n`;
+            message += `• Total scans performed: ${debug.fileWatcher.totalScansPerformed}\n`;
+            message += `• Last scan duration: ${debug.fileWatcher.lastScanDurationFormatted || 'N/A'}\n`;
+            message += `• Last scan file count: ${debug.fileWatcher.lastScanFileCount}\n`;
+            message += `• Average scan time: ${debug.fileWatcher.averageScanTimeFormatted || 'N/A'}\n`;
+            message += `• Total scan time: ${debug.fileWatcher.totalScanTimeFormatted || 'N/A'}\n`;
+            message += `• Last scan started: ${debug.fileWatcher.lastScanStartTime ? new Date(debug.fileWatcher.lastScanStartTime).toLocaleString() : 'N/A'}\n`;
+            message += `• Last scan ended: ${debug.fileWatcher.lastScanEndTime ? new Date(debug.fileWatcher.lastScanEndTime).toLocaleString() : 'N/A'}\n`;
+            
+            if (debug.fileWatcher.totalScansPerformed > 0) {
+                const avgFilesPerScan = debug.fileWatcher.lastScanFileCount / debug.fileWatcher.totalScansPerformed;
+                const avgTimePerFile = debug.fileWatcher.averageScanTime / Math.max(1, debug.fileWatcher.lastScanFileCount);
+                message += `\nPerformance Metrics:\n`;
+                message += `• Average files per scan: ${Math.round(avgFilesPerScan)}\n`;
+                message += `• Average time per file: ${Math.round(avgTimePerFile)}ms\n`;
+            }
+            
+            alert(message);
         } catch (error) {
             console.error('Error getting debug info:', error);
         }
@@ -1010,41 +1035,6 @@ class PhotoCatalogApp {
         }
     }
 
-    async showVitals() {
-        try {
-            const vitals = await window.electronAPI.getVitals();
-            
-            let message = `System Vitals\n`;
-            message += `Generated: ${new Date(vitals.timestamp).toLocaleString()}\n\n`;
-            
-            message += `File Watcher Performance:\n`;
-            message += `• Total scans performed: ${vitals.fileWatcher.totalScansPerformed}\n`;
-            message += `• Last scan duration: ${vitals.fileWatcher.lastScanDurationFormatted || 'N/A'}\n`;
-            message += `• Last scan file count: ${vitals.fileWatcher.lastScanFileCount}\n`;
-            message += `• Average scan time: ${vitals.fileWatcher.averageScanTimeFormatted || 'N/A'}\n`;
-            message += `• Total scan time: ${vitals.fileWatcher.totalScanTimeFormatted || 'N/A'}\n`;
-            message += `• Last scan started: ${vitals.fileWatcher.lastScanStartTime ? new Date(vitals.fileWatcher.lastScanStartTime).toLocaleString() : 'N/A'}\n`;
-            message += `• Last scan ended: ${vitals.fileWatcher.lastScanEndTime ? new Date(vitals.fileWatcher.lastScanEndTime).toLocaleString() : 'N/A'}\n\n`;
-            
-            message += `Database Statistics:\n`;
-            message += `• Total images: ${vitals.database.imageCount}\n`;
-            message += `• User metadata entries: ${vitals.database.userMetaCount}\n`;
-            message += `• Favorite images: ${vitals.database.favoriteCount}\n`;
-            
-            if (vitals.fileWatcher.totalScansPerformed > 0) {
-                const avgFilesPerScan = vitals.fileWatcher.lastScanFileCount / vitals.fileWatcher.totalScansPerformed;
-                const avgTimePerFile = vitals.fileWatcher.averageScanTime / Math.max(1, vitals.fileWatcher.lastScanFileCount);
-                message += `\nPerformance Metrics:\n`;
-                message += `• Average files per scan: ${Math.round(avgFilesPerScan)}\n`;
-                message += `• Average time per file: ${Math.round(avgTimePerFile)}ms\n`;
-            }
-            
-            alert(message);
-        } catch (error) {
-            console.error('Error getting vitals:', error);
-            alert('Failed to get system vitals');
-        }
-    }
 
     async rebuildDatabase() {
         if (confirm('Are you sure you want to rebuild the database? This will clear all data and re-scan all watched directories. This cannot be undone.')) {
