@@ -657,12 +657,6 @@ class PhotoCatalogApp {
         if (rawExifData.parameters) {
             const parsedParams = this.parseParametersField(rawExifData.parameters);
             
-            // Show seed if found
-            if (parsedParams.seed) {
-                aiContent += '<div><strong>Seed:</strong></div>';
-                aiContent += `<div class="clickable-text" data-copy="${parsedParams.seed}" style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px; cursor: pointer;">${parsedParams.seed}</div>`;
-            }
-            
             // Show prompt if found
             if (parsedParams.prompt) {
                 aiContent += '<div><strong>Prompt:</strong></div>';
@@ -673,6 +667,12 @@ class PhotoCatalogApp {
             if (parsedParams.negativePrompt) {
                 aiContent += '<div><strong>Negative Prompt:</strong></div>';
                 aiContent += `<div class="clickable-text" data-copy="${parsedParams.negativePrompt}" style="margin-bottom: 15px; background: #1a1a1a; padding: 10px; border-radius: 4px; font-size: 12px; line-height: 1.4; cursor: pointer;">${parsedParams.negativePrompt}</div>`;
+            }
+            
+            // Show seed if found (moved below negative prompt)
+            if (parsedParams.seed) {
+                aiContent += '<div><strong>Seed:</strong></div>';
+                aiContent += `<div class="clickable-text" data-copy="${parsedParams.seed}" style="margin-bottom: 15px; font-family: monospace; background: #2a2a2a; padding: 8px; border-radius: 4px; cursor: pointer;">${parsedParams.seed}</div>`;
             }
             
             // Show generation parameters if found
