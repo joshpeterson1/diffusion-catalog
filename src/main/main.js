@@ -177,13 +177,6 @@ class PhotoCatalogApp {
           },
           { type: 'separator' },
           {
-            label: 'Vitals',
-            click: async () => {
-              this.mainWindow.webContents.send('menu-vitals');
-            }
-          },
-          { type: 'separator' },
-          {
             label: 'Rebuild Database',
             click: async () => {
               this.mainWindow.webContents.send('menu-rebuild-db');
@@ -382,7 +375,14 @@ class PhotoCatalogApp {
 
     // Debug database handler
     ipcMain.handle('debug-database', async () => {
-      return await this.database.debugInfo();
+      const fileWatcherVitals = this.fileWatcher.getVitals();
+      const databaseVitals = await this.database.debugInfo();
+      
+      return {
+        fileWatcher: fileWatcherVitals,
+        database: databaseVitals,
+        timestamp: new Date().toISOString()
+      };
     });
 
     // Get subfolders handler
@@ -416,17 +416,6 @@ class PhotoCatalogApp {
       return await this.database.getTableData(tableName);
     });
 
-    // Get vitals handler
-    ipcMain.handle('get-vitals', async () => {
-      const fileWatcherVitals = this.fileWatcher.getVitals();
-      const databaseVitals = await this.database.debugInfo();
-      
-      return {
-        fileWatcher: fileWatcherVitals,
-        database: databaseVitals,
-        timestamp: new Date().toISOString()
-      };
-    });
 
     // Rebuild database handler
     ipcMain.handle('rebuild-database', async () => {
