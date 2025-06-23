@@ -924,7 +924,8 @@ class PhotoCatalogApp {
             try {
                 const excludedCount = await this.getExcludedNsfwCount();
                 if (excludedCount > 0) {
-                    countText += ` • ${excludedCount} NSFW photos not shown`;
+                    const photoText = excludedCount === 1 ? 'favorite' : 'favorites';
+                    countText += ` • ${excludedCount} NSFW ${photoText} not shown`;
                 }
             } catch (error) {
                 console.error('Error getting excluded NSFW count:', error);
