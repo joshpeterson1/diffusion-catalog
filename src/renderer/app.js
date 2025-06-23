@@ -283,16 +283,28 @@ class PhotoCatalogApp {
                     const availableWidth = parentRect.width - 80;
                     const availableHeight = parentRect.height - 120;
                     
-                    const spacing = 20;
-                    const minImageSize = 120;
+                    const baseSpacing = 20;
+                    const minImageSize = 150;
+                    const maxImageSize = 300;
                     
-                    const maxCols = Math.floor((availableWidth + spacing) / (minImageSize + spacing));
-                    const maxRows = Math.floor((availableHeight + spacing) / (minImageSize + spacing));
+                    let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
+                    const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
                     
                     const cols = Math.max(2, Math.min(maxCols, 12));
                     const rows = Math.max(2, Math.min(maxRows, 8));
                     
-                    const imageSize = Math.floor((availableWidth - (cols - 1) * spacing) / cols);
+                    let imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
+                    let spacing = baseSpacing;
+                    
+                    if (imageSize > maxImageSize) {
+                        imageSize = maxImageSize;
+                        spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
+                    }
+                    
+                    if (imageSize < minImageSize) {
+                        imageSize = minImageSize;
+                        spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+                    }
                     
                     this.gridDimensions = {
                         cols: cols,
@@ -315,19 +327,34 @@ class PhotoCatalogApp {
         const availableWidth = galleryRect.width - 40; // Account for padding
         const availableHeight = galleryRect.height - 40;
 
-        const spacing = 20;
-        const minImageSize = 120; // Minimum viable image size
+        const baseSpacing = 20;
+        const minImageSize = 150; // Increased minimum viable image size
+        const maxImageSize = 300; // Maximum image size to prevent too large images
 
-        // Calculate maximum columns that fit with spacing
-        const maxCols = Math.floor((availableWidth + spacing) / (minImageSize + spacing));
-        const maxRows = Math.floor((availableHeight + spacing) / (minImageSize + spacing));
+        // Calculate maximum columns that fit with base spacing
+        let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
+        const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
 
         // Ensure minimum of 2x2 and maximum reasonable limits
         const cols = Math.max(2, Math.min(maxCols, 12));
         const rows = Math.max(2, Math.min(maxRows, 8));
 
         // Calculate actual image size based on available space
-        const imageSize = Math.floor((availableWidth - (cols - 1) * spacing) / cols);
+        let imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
+        
+        // If calculated image size is too large, reduce it and increase spacing
+        let spacing = baseSpacing;
+        if (imageSize > maxImageSize) {
+            imageSize = maxImageSize;
+            // Recalculate spacing to center the grid
+            spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
+        }
+        
+        // Ensure minimum image size is maintained
+        if (imageSize < minImageSize) {
+            imageSize = minImageSize;
+            spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+        }
 
         this.gridDimensions = {
             cols: cols,
