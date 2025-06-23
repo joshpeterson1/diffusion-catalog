@@ -111,6 +111,88 @@ class PhotoCatalogApp {
         });
     }
 
+    async loadWatchedDirectories() {
+        try {
+            console.log('Loading watched directories...');
+            const watchedDirs = await window.electronAPI.getWatchedDirectories();
+            console.log('Received watched directories:', watchedDirs);
+            this.renderWatchedDirectoriesList(watchedDirs);
+        } catch (error) {
+            console.error('Error loading watched directories:', error);
+        }
+    }
+
+    renderWatchedDirectoriesList(watchedDirs) {
+        const watchedList = document.getElementById('watchedDirectoriesList');
+        console.log('Rendering watched directories list, element found:', !!watchedList);
+        console.log('Watched dirs to render:', watchedDirs);
+        
+        if (!watchedList) {
+            console.error('watchedDirectoriesList element not found!');
+            return;
+        }
+        
+        if (!watchedDirs || watchedDirs.length === 0) {
+            watchedList.innerHTML = '<div class="no-watched-dirs">No directories being watched</div>';
+            return;
+        }
+
+        watchedList.innerHTML = '';
+        
+        watchedDirs.forEach(dir => {
+            const dirItem = document.createElement('div');
+            dirItem.className = 'watched-dir-item';
+            
+            const dirInfo = document.createElement('div');
+            dirInfo.className = 'watched-dir-info';
+            
+            // Check if this is a ZIP file
+            const isZipFile = dir.path.toLowerCase().endsWith('.zip');
+            const icon = isZipFile ? '<i class="bi bi-archive-fill"></i>' : '<i class="bi bi-folder-fill"></i>';
+            
+            dirInfo.innerHTML = `
+                <div class="watched-dir-name">
+                    ${icon}
+                    <span class="dir-name">${dir.name}</span>
+                    <span class="dir-status ${dir.isActive ? 'active' : 'inactive'}">
+                        ${dir.isActive ? '●' : '○'}
+                    </span>
+                </div>
+                <div class="watched-dir-path" title="${dir.path}">${dir.path}</div>
+            `;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-watched-dir-btn';
+            removeBtn.innerHTML = '<i class="bi bi-x-circle"></i>';
+            removeBtn.title = 'Remove from watching';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeWatchedDirectory(dir.path);
+            });
+            
+            dirItem.appendChild(dirInfo);
+            dirItem.appendChild(removeBtn);
+            watchedList.appendChild(dirItem);
+        });
+    }
+
+    async removeWatchedDirectory(dirPath) {
+        if (confirm(`Stop watching "${dirPath}"?\n\nThis will remove the directory from monitoring but won't delete any photos from the database.`)) {
+            try {
+                const result = await window.electronAPI.removeWatchDirectory(dirPath);
+                if (result.success) {
+                    // Reload the watched directories list
+                    await this.loadWatchedDirectories();
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error removing watched directory:', error);
+                alert('Failed to remove watched directory');
+            }
+        }
+    }
+
     async loadSubfolders() {
         try {
             const subfolders = await window.electronAPI.getSubfolders();
@@ -775,7 +857,8 @@ class PhotoCatalogApp {
                 const result = await window.electronAPI.addWatchDirectory(dirPath);
                 if (result.success) {
                     alert(result.message);
-                    // Reload subfolders and photos
+                    // Reload watched directories, subfolders and photos
+                    await this.loadWatchedDirectories();
                     await this.loadSubfolders();
                     await this.loadPhotos(true);
                 } else {
@@ -1067,6 +1150,7 @@ class PhotoCatalogApp {
         this.initializeFilters();
         
         // Load data
+        await this.loadWatchedDirectories();
         await this.loadSubfolders();
         await this.loadPhotos();
     }
