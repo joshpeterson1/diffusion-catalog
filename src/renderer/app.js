@@ -25,8 +25,9 @@ class PhotoCatalogApp {
         const searchBtn = document.getElementById('searchBtn');
         const searchInput = document.getElementById('searchInput');
         
+        // Use onclick instead of addEventListener to ensure it always works
         if (searchBtn) {
-            searchBtn.addEventListener('click', () => this.handleSearch());
+            searchBtn.onclick = () => this.handleSearch();
         }
         
         if (searchInput) {
@@ -982,11 +983,16 @@ class PhotoCatalogApp {
             } finally {
                 this.showLoading(false);
                 
-                // Multiple attempts to restore focus
-                this.restoreInputFocus();
-                setTimeout(() => this.restoreInputFocus(), 100);
-                setTimeout(() => this.restoreInputFocus(), 500);
-                setTimeout(() => this.restoreInputFocus(), 1000);
+                // Force restore search functionality
+                setTimeout(() => {
+                    const searchBtn = document.getElementById('searchBtn');
+                    if (searchBtn) {
+                        searchBtn.onclick = () => this.handleSearch();
+                        searchBtn.disabled = false;
+                        searchBtn.style.pointerEvents = 'auto';
+                    }
+                    this.restoreInputFocus();
+                }, 100);
             }
         }
     }
@@ -1248,15 +1254,6 @@ class PhotoCatalogApp {
             
             // Force a reflow to ensure the browser updates the element state
             searchInput.offsetHeight;
-            
-            // Re-attach event listeners if they got lost
-            const newSearchInput = searchInput.cloneNode(true);
-            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
-            
-            // Re-add event listeners
-            newSearchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.handleSearch();
-            });
         }
         
         if (searchBtn) {
@@ -1266,12 +1263,14 @@ class PhotoCatalogApp {
             
             // Force a reflow
             searchBtn.offsetHeight;
+            
+            // Re-attach click handler to ensure it works
+            searchBtn.onclick = () => this.handleSearch();
         }
         
-        // Also restore any other interactive elements
+        // Ensure all buttons are enabled
         const allButtons = document.querySelectorAll('button');
         allButtons.forEach(btn => {
-            if (btn.id !== 'searchBtn') return;
             btn.disabled = false;
             btn.style.pointerEvents = 'auto';
         });
