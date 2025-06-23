@@ -801,9 +801,8 @@ class PhotoCatalogApp {
     }
 
     initializeFilters() {
-        // Set initial NSFW button state
-        const nsfwButton = document.getElementById('nsfwFilter');
-        nsfwButton.classList.add('active');
+        // Filter initialization is now handled by loadConfig()
+        // No need to set initial states here since config will override them
     }
 
     refreshPhotos() {
