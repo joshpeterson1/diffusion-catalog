@@ -153,12 +153,11 @@ class PhotoCatalogApp {
             dirInfo.innerHTML = `
                 <div class="watched-dir-name">
                     ${icon}
-                    <span class="dir-name">${dir.name}</span>
+                    <span class="dir-name" title="${dir.path}">${dir.name}</span>
                     <span class="dir-status ${dir.isActive ? 'active' : 'inactive'}">
                         ${dir.isActive ? '●' : '○'}
                     </span>
                 </div>
-                <div class="watched-dir-path" title="${dir.path}">${dir.path}</div>
             `;
             
             const removeBtn = document.createElement('button');
