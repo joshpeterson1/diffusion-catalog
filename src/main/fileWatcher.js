@@ -54,8 +54,14 @@ class FileWatcher {
 
         // Set up event handlers
         watcher
-          .on('add', (filePath) => this.handleFileAdded(filePath))
-          .on('unlink', (filePath) => this.handleFileRemoved(filePath))
+          .on('add', (filePath) => {
+            console.log(`WATCHER ADD: ${filePath}`);
+            this.handleFileAdded(filePath);
+          })
+          .on('unlink', (filePath) => {
+            console.log(`WATCHER UNLINK: ${filePath}`);
+            this.handleFileRemoved(filePath);
+          })
           .on('error', (error) => console.error('Watcher error:', error));
 
         this.watchers.set(dirPath, watcher);
@@ -244,18 +250,28 @@ class FileWatcher {
 
   async handleFileRemoved(filePath) {
     try {
+      console.log(`FILE REMOVED EVENT: ${filePath}`);
+      
+      // Check if file exists in database first
+      const existing = this.database.db.prepare('SELECT id, path FROM images WHERE path = ?').get(filePath);
+      console.log(`Database lookup for removed file:`, existing);
+      
       // Remove from database
       const stmt = this.database.db.prepare('DELETE FROM images WHERE path = ?');
       const result = stmt.run(filePath);
       
+      console.log(`Delete result: ${result.changes} rows affected`);
+      
       // Only notify if we actually removed something
       if (result.changes > 0) {
-        console.log(`Removed file from database: ${filePath}`);
+        console.log(`Successfully removed file from database: ${filePath}`);
         
         // Notify frontend that photos were updated
         if (this.mainWindow && this.mainWindow.webContents) {
           this.mainWindow.webContents.send('photos-updated');
         }
+      } else {
+        console.log(`No database entry found for removed file: ${filePath}`);
       }
     } catch (error) {
       console.error('Error handling file removed:', error);
