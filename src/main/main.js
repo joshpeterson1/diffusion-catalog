@@ -97,6 +97,19 @@ class PhotoCatalogApp {
             click: async () => {
               this.mainWindow.webContents.send('menu-preferences');
             }
+          },
+          { type: 'separator' },
+          {
+            label: 'Clear all Favorites',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-clear-favorites');
+            }
+          },
+          {
+            label: 'Clear all NSFW',
+            click: async () => {
+              this.mainWindow.webContents.send('menu-clear-nsfw');
+            }
           }
         ]
       },
@@ -160,19 +173,6 @@ class PhotoCatalogApp {
             label: 'View Database',
             click: async () => {
               this.openDatabaseViewer();
-            }
-          },
-          { type: 'separator' },
-          {
-            label: 'Clear all Favorites',
-            click: async () => {
-              this.mainWindow.webContents.send('menu-clear-favorites');
-            }
-          },
-          {
-            label: 'Clear all NSFW',
-            click: async () => {
-              this.mainWindow.webContents.send('menu-clear-nsfw');
             }
           },
           { type: 'separator' },
