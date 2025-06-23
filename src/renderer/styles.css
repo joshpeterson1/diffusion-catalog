@@ -549,20 +549,18 @@ body {
 /* List view specific positioning for indicators */
 .favorite-indicator.list-view {
     position: absolute;
-    top: 8px;
+    top: 6px;
     right: 80px;
     left: auto;
     font-size: 16px;
-    margin: 2px;
 }
 
 .nsfw-indicator.list-view {
     position: absolute;
-    top: 34px;
+    top: 32px;
     right: 80px;
     left: auto;
     font-size: 16px;
-    margin: 2px;
 }
 
 .pagination-container {
