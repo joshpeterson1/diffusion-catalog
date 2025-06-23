@@ -284,13 +284,14 @@ class PhotoCatalogApp {
                     const availableHeight = parentRect.height - 120;
                     
                     const baseSpacing = 20;
-                    const minImageSize = 150;
-                    const maxImageSize = 300;
+                    const minImageSize = 180;
+                    const maxImageSize = 280;
                     
                     let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
                     const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
                     
-                    const cols = Math.max(2, Math.min(maxCols, 12));
+                    const maxColsForUltrawide = availableWidth > 2500 ? 8 : 12;
+                    const cols = Math.max(2, Math.min(maxCols, maxColsForUltrawide));
                     const rows = Math.max(2, Math.min(maxRows, 8));
                     
                     let imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
@@ -328,15 +329,16 @@ class PhotoCatalogApp {
         const availableHeight = galleryRect.height - 40;
 
         const baseSpacing = 20;
-        const minImageSize = 150; // Increased minimum viable image size
-        const maxImageSize = 300; // Maximum image size to prevent too large images
+        const minImageSize = 180; // Increased minimum for better visibility on ultrawide
+        const maxImageSize = 280; // Slightly reduced max to prevent oversized images
 
         // Calculate maximum columns that fit with base spacing
         let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
         const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
 
-        // Ensure minimum of 2x2 and maximum reasonable limits
-        const cols = Math.max(2, Math.min(maxCols, 12));
+        // Ensure minimum of 2x2 and maximum reasonable limits (stricter for ultrawide)
+        const maxColsForUltrawide = availableWidth > 2500 ? 8 : 12; // Limit columns on ultrawide
+        const cols = Math.max(2, Math.min(maxCols, maxColsForUltrawide));
         const rows = Math.max(2, Math.min(maxRows, 8));
 
         // Calculate actual image size based on available space
