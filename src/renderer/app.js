@@ -347,6 +347,10 @@ class PhotoCatalogApp {
         document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
         document.getElementById('listViewBtn').classList.toggle('active', mode === 'list');
         
+        // Show/hide density controls based on view mode
+        const densityControls = document.querySelector('.density-controls');
+        densityControls.style.display = mode === 'grid' ? 'flex' : 'none';
+        
         // Update gallery class and clear any conflicting inline styles
         const gallery = document.getElementById('galleryGrid');
         gallery.className = mode === 'grid' ? 'gallery-grid' : 'gallery-list';
