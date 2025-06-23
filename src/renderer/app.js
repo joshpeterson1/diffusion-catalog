@@ -1218,7 +1218,7 @@ class PhotoCatalogApp {
     showNoResultsState() {
         const gallery = document.getElementById('galleryGrid');
         gallery.innerHTML = `
-            <div class="empty-state">
+            <div class="no-results-state">
                 <i class="bi bi-search"></i>
                 <h3>No Results Found</h3>
                 <p>Try adjusting your search or filters</p>
