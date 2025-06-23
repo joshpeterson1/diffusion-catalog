@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Desktop app for managing and cataloging diffusion-generated photos",
   "main": "src/main/main.js",
+  "author": "somber",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
@@ -48,7 +49,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
-      "createDesktopShortcut": "ask",
+      "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico"
