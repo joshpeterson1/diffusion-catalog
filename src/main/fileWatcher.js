@@ -306,7 +306,7 @@ class FileWatcher {
       });
 
       for (const filePath of files) {
-        await this.handleFileAdded(filePath);
+        this.handleFileAdded(filePath); // Remove await - let metadata extraction happen async
       }
       
       return files.length;
