@@ -285,7 +285,8 @@ class PhotoCatalogApp {
                     
                     const baseSpacing = 20;
                     const minImageSize = 180;
-                    const maxImageSize = 280;
+                    const maxImageSize = 220;
+                    const optimalImageSize = 200;
                     
                     let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
                     const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
@@ -294,17 +295,23 @@ class PhotoCatalogApp {
                     const cols = Math.max(2, Math.min(maxCols, maxColsForUltrawide));
                     const rows = Math.max(2, Math.min(maxRows, 8));
                     
-                    let imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
-                    let spacing = baseSpacing;
-                    
-                    if (imageSize > maxImageSize) {
-                        imageSize = maxImageSize;
-                        spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
-                    }
-                    
-                    if (imageSize < minImageSize) {
-                        imageSize = minImageSize;
-                        spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+                    let imageSize, spacing;
+                    if (rows >= 4 && cols >= 8) {
+                        imageSize = optimalImageSize;
+                        spacing = Math.max(baseSpacing, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+                    } else {
+                        imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
+                        spacing = baseSpacing;
+                        
+                        if (imageSize > maxImageSize) {
+                            imageSize = maxImageSize;
+                            spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
+                        }
+                        
+                        if (imageSize < minImageSize) {
+                            imageSize = minImageSize;
+                            spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+                        }
                     }
                     
                     this.gridDimensions = {
@@ -329,33 +336,40 @@ class PhotoCatalogApp {
         const availableHeight = galleryRect.height - 40;
 
         const baseSpacing = 20;
-        const minImageSize = 180; // Increased minimum for better visibility on ultrawide
-        const maxImageSize = 280; // Slightly reduced max to prevent oversized images
+        const minImageSize = 180;
+        const maxImageSize = 220; // Reduced max to prevent oversized images
+        const optimalImageSize = 200; // Target size for stable layout
 
         // Calculate maximum columns that fit with base spacing
         let maxCols = Math.floor((availableWidth + baseSpacing) / (minImageSize + baseSpacing));
         const maxRows = Math.floor((availableHeight + baseSpacing) / (minImageSize + baseSpacing));
 
         // Ensure minimum of 2x2 and maximum reasonable limits (stricter for ultrawide)
-        const maxColsForUltrawide = availableWidth > 2500 ? 8 : 12; // Limit columns on ultrawide
+        const maxColsForUltrawide = availableWidth > 2500 ? 8 : 12;
         const cols = Math.max(2, Math.min(maxCols, maxColsForUltrawide));
         const rows = Math.max(2, Math.min(maxRows, 8));
 
-        // Calculate actual image size based on available space
-        let imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
-        
-        // If calculated image size is too large, reduce it and increase spacing
-        let spacing = baseSpacing;
-        if (imageSize > maxImageSize) {
-            imageSize = maxImageSize;
-            // Recalculate spacing to center the grid
-            spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
-        }
-        
-        // Ensure minimum image size is maintained
-        if (imageSize < minImageSize) {
-            imageSize = minImageSize;
-            spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+        // For optimal layouts (4 rows, 8+ columns), use stable sizing
+        let imageSize, spacing;
+        if (rows >= 4 && cols >= 8) {
+            imageSize = optimalImageSize;
+            spacing = Math.max(baseSpacing, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+        } else {
+            // Calculate actual image size based on available space
+            imageSize = Math.floor((availableWidth - (cols - 1) * baseSpacing) / cols);
+            spacing = baseSpacing;
+            
+            // Cap the image size to prevent oversized images
+            if (imageSize > maxImageSize) {
+                imageSize = maxImageSize;
+                spacing = Math.floor((availableWidth - (cols * imageSize)) / (cols - 1));
+            }
+            
+            // Ensure minimum image size is maintained
+            if (imageSize < minImageSize) {
+                imageSize = minImageSize;
+                spacing = Math.max(10, Math.floor((availableWidth - (cols * imageSize)) / (cols - 1)));
+            }
         }
 
         this.gridDimensions = {
