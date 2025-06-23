@@ -27,7 +27,7 @@ class PhotoCatalogApp {
     this.setupIpcHandlers();
   }
 
-  createWindow() {
+  async createWindow() {
     this.mainWindow = new BrowserWindow({
       width: 1400,
       height: 900,
@@ -470,11 +470,11 @@ const photoApp = new PhotoCatalogApp();
 
 app.whenReady().then(async () => {
   await photoApp.initialize();
-  photoApp.createWindow();
+  await photoApp.createWindow();
 
-  app.on('activate', () => {
+  app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      photoApp.createWindow();
+      await photoApp.createWindow();
     }
   });
 });
