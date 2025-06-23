@@ -464,12 +464,15 @@ class PhotoCatalogApp {
     // Get watched directories handler
     ipcMain.handle('get-watched-directories', async () => {
       try {
-        const watchedDirs = Array.from(this.fileWatcher.watchers.keys());
-        console.log('Main: Getting watched directories, found:', watchedDirs);
-        const result = watchedDirs.map(dirPath => ({
-          path: dirPath,
-          name: require('path').basename(dirPath),
-          isActive: true
+        // Read from database, not from in-memory watchers Map
+        const stmt = this.database.db.prepare('SELECT path FROM watch_directories');
+        const watchedDirs = stmt.all();
+        console.log('Main: Getting watched directories from DB, found:', watchedDirs);
+        
+        const result = watchedDirs.map(row => ({
+          path: row.path,
+          name: require('path').basename(row.path),
+          isActive: this.fileWatcher.watchers.has(row.path) // Check if watcher is active
         }));
         console.log('Main: Returning watched directories:', result);
         return result;
