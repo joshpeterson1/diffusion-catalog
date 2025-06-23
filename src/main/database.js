@@ -424,39 +424,76 @@ class DatabaseManager {
           END as folder_path,
           COUNT(*) as image_count
         FROM images 
+        WHERE folder_path IS NOT NULL AND folder_path != ''
         GROUP BY folder_path
         ORDER BY folder_path
       `);
       
       const folders = stmt.all();
       
-      // Process folders to extract meaningful subfolder names
-      const subfolders = folders.map(folder => {
-        let folderName;
-        let folderPath = folder.folder_path;
-        
-        if (folderPath.toLowerCase().endsWith('.zip')) {
-          // For ZIP files, use the ZIP filename as the folder name
-          const parts = folderPath.split(/[\/\\]/);
-          folderName = parts[parts.length - 1];
-        } else {
-          // For regular directories, use the directory name
-          const parts = folderPath.split(/[\/\\]/);
-          folderName = parts[parts.length - 1] || parts[parts.length - 2];
-        }
-        
-        return {
-          name: folderName,
-          path: folderPath,
-          imageCount: folder.image_count
-        };
-      }).filter(folder => folder.name && folder.name.trim() !== '');
-      
-      return subfolders;
+      // Build hierarchical tree structure
+      return this.buildFolderTree(folders);
     } catch (error) {
       console.error('Error getting subfolders:', error);
       return [];
     }
+  }
+
+  buildFolderTree(folders) {
+    const tree = [];
+    const pathMap = new Map();
+    
+    // Normalize paths and create path segments
+    folders.forEach(folder => {
+      const normalizedPath = folder.folder_path.replace(/\\/g, '/');
+      const segments = normalizedPath.split('/').filter(segment => segment.length > 0);
+      
+      // Build tree structure
+      let currentLevel = tree;
+      let currentPath = '';
+      
+      segments.forEach((segment, index) => {
+        currentPath += (currentPath ? '/' : '') + segment;
+        
+        // Check if this path segment already exists at current level
+        let existingNode = currentLevel.find(node => node.name === segment && node.path === currentPath);
+        
+        if (!existingNode) {
+          // Create new node
+          const isLeaf = index === segments.length - 1;
+          existingNode = {
+            name: segment,
+            path: currentPath,
+            imageCount: isLeaf ? folder.image_count : 0,
+            children: [],
+            isExpanded: false,
+            level: index
+          };
+          currentLevel.push(existingNode);
+          pathMap.set(currentPath, existingNode);
+        } else if (index === segments.length - 1) {
+          // Update image count for leaf node
+          existingNode.imageCount = folder.image_count;
+        }
+        
+        currentLevel = existingNode.children;
+      });
+    });
+    
+    // Calculate total image counts for parent folders
+    this.calculateParentCounts(tree);
+    
+    return tree;
+  }
+
+  calculateParentCounts(nodes) {
+    nodes.forEach(node => {
+      if (node.children.length > 0) {
+        this.calculateParentCounts(node.children);
+        // Sum up children's image counts
+        node.imageCount = node.children.reduce((sum, child) => sum + child.imageCount, 0);
+      }
+    });
   }
 
   async debugInfo() {

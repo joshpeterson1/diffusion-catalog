@@ -199,10 +199,12 @@ body {
 .folder-item {
     display: flex;
     align-items: center;
-    margin-bottom: 6px;
-    padding: 4px;
+    margin-bottom: 2px;
+    padding: 2px 0;
     border-radius: 3px;
     transition: background-color 0.2s ease;
+    font-size: 12px;
+    line-height: 1.2;
 }
 
 .folder-item:hover {
@@ -210,7 +212,8 @@ body {
 }
 
 .folder-item input[type="checkbox"] {
-    margin-right: 8px;
+    margin-right: 6px;
+    margin-left: 4px;
     width: auto;
 }
 
@@ -226,11 +229,34 @@ body {
 
 .folder-name {
     flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .folder-count {
     color: #888;
     font-size: 11px;
+    margin-left: 8px;
+}
+
+.expand-icon {
+    cursor: pointer;
+    margin-right: 4px;
+    font-size: 10px;
+    color: #888;
+    width: 12px;
+    text-align: center;
+}
+
+.expand-icon:hover {
+    color: #fff;
+}
+
+.expand-spacer {
+    width: 12px;
+    margin-right: 4px;
+    display: inline-block;
 }
 
 .no-folders {
