@@ -385,6 +385,8 @@ class FileWatcher {
       console.log(`Saved watched directory to database: ${dirPath}`);
     } catch (error) {
       console.error('Error saving watched directory:', error);
+      console.error('Database object:', this.database);
+      console.error('Database.db object:', this.database.db);
     }
   }
 
@@ -400,6 +402,8 @@ class FileWatcher {
 
   async restoreWatchedDirectories() {
     try {
+      console.log('Database object in restore:', this.database);
+      console.log('Database.db object in restore:', this.database.db);
       const stmt = this.database.db.prepare('SELECT path FROM watch_directories');
       const watchedDirs = stmt.all();
       
