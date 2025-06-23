@@ -192,6 +192,10 @@ body {
     background-color: #007acc;
 }
 
+.filter-button.nsfw-only {
+    background-color: #ff4444;
+}
+
 .folder-item {
     display: flex;
     align-items: center;

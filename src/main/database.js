@@ -147,11 +147,13 @@ class DatabaseManager {
       sortBy = 'date_taken',
       sortOrder = 'DESC',
       isFavorite,
-      excludeNsfw
+      excludeNsfw,
+      nsfwOnly
     } = options;
 
     console.log('isFavorite value:', isFavorite, 'type:', typeof isFavorite);
     console.log('excludeNsfw value:', excludeNsfw, 'type:', typeof excludeNsfw);
+    console.log('nsfwOnly value:', nsfwOnly, 'type:', typeof nsfwOnly);
     console.log('selectedFolders:', selectedFolders);
 
     let query, params = [];
@@ -176,7 +178,10 @@ class DatabaseManager {
     }
     
     // Apply NSFW filter if specified
-    if (excludeNsfw === true) {
+    if (nsfwOnly === true) {
+      query += ' AND COALESCE(u.is_nsfw, 0) = 1';
+      console.log('Added NSFW-only filter');
+    } else if (excludeNsfw === true) {
       query += ' AND COALESCE(u.is_nsfw, 0) = 0';
       console.log('Added NSFW exclusion filter');
     }

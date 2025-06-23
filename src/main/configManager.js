@@ -8,6 +8,7 @@ class ConfigManager {
         this.defaultConfig = {
             thumbnailDensity: 'medium',
             includeNsfw: true,
+            nsfwOnly: false,
             favoritesOnly: false,
             sortBy: 'date_taken',
             sortOrder: 'DESC',
