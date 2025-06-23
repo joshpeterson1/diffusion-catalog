@@ -208,10 +208,10 @@ class PhotoCatalogApp {
               }).then((result) => {
                 if (result.response === 1) {
                   // View Project button clicked
-                  shell.openExternal('https://google.com');
+                  shell.openExternal('https://github.com/joshpeterson1/diffusion-catalog');
                 } else if (result.response === 2) {
                   // Open Issue button clicked
-                  shell.openExternal('https://google.com');
+                  shell.openExternal('https://github.com/joshpeterson1/diffusion-catalog/issues/new');
                 }
               });
             }
