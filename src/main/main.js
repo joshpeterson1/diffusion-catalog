@@ -202,7 +202,7 @@ class PhotoCatalogApp {
                 type: 'info',
                 title: 'About AI Photo Catalog',
                 message: 'AI Photo Catalog',
-                detail: 'Made by somber with love\n\nA powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.\n\nHeavily inspired by BreadBoard.',
+                detail: 'Made by somber with love\n\nA powerful tool for organizing and managing AI-generated images with metadata extraction and tagging capabilities.\n\nHeavily inspired by Cocktailpeanut\'s Breadboard.',
                 icon: path.join(__dirname, '..', '..', 'icon.png'),
                 buttons: ['Close', 'View Project', 'Open Issue']
               }).then((result) => {
