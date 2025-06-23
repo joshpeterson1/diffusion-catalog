@@ -246,7 +246,17 @@ class FileWatcher {
     try {
       // Remove from database
       const stmt = this.database.db.prepare('DELETE FROM images WHERE path = ?');
-      stmt.run(filePath);
+      const result = stmt.run(filePath);
+      
+      // Only notify if we actually removed something
+      if (result.changes > 0) {
+        console.log(`Removed file from database: ${filePath}`);
+        
+        // Notify frontend that photos were updated
+        if (this.mainWindow && this.mainWindow.webContents) {
+          this.mainWindow.webContents.send('photos-updated');
+        }
+      }
     } catch (error) {
       console.error('Error handling file removed:', error);
     }
