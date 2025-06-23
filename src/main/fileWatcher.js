@@ -252,13 +252,20 @@ class FileWatcher {
     try {
       console.log(`FILE REMOVED EVENT: ${filePath}`);
       
-      // Check if file exists in database first
-      const existing = this.database.db.prepare('SELECT id, path FROM images WHERE path = ?').get(filePath);
+      // Normalize path to forward slashes for database consistency
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      console.log(`Normalized path: ${normalizedPath}`);
+      
+      // Check if file exists in database first (try both formats)
+      let existing = this.database.db.prepare('SELECT id, path FROM images WHERE path = ?').get(filePath);
+      if (!existing) {
+        existing = this.database.db.prepare('SELECT id, path FROM images WHERE path = ?').get(normalizedPath);
+      }
       console.log(`Database lookup for removed file:`, existing);
       
-      // Remove from database
-      const stmt = this.database.db.prepare('DELETE FROM images WHERE path = ?');
-      const result = stmt.run(filePath);
+      // Remove from database (try both formats)
+      const stmt = this.database.db.prepare('DELETE FROM images WHERE path = ? OR path = ?');
+      const result = stmt.run(filePath, normalizedPath);
       
       console.log(`Delete result: ${result.changes} rows affected`);
       
