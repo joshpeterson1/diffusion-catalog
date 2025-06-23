@@ -417,7 +417,7 @@ class PhotoCatalogApp {
             console.log('LOADPHOTOS: Current photos array length:', this.photos.length);
 
             this.renderGallery();
-            this.updatePhotoCount();
+            await this.updatePhotoCount();
             this.updatePaginationControls();
 
         } catch (error) {
@@ -770,7 +770,7 @@ class PhotoCatalogApp {
                 const results = await window.electronAPI.searchPhotos(query, this.currentFilters);
                 this.photos = results;
                 this.renderGallery();
-                this.updatePhotoCount();
+                await this.updatePhotoCount();
                 this.updatePaginationControls();
             } catch (error) {
                 console.error('Error searching photos:', error);
@@ -906,7 +906,7 @@ class PhotoCatalogApp {
         }
     }
 
-    updatePhotoCount() {
+    async updatePhotoCount() {
         let filterText = 'All folders';
         if (this.selectedFolders.length > 0) {
             if (this.selectedFolders.length === 1) {
@@ -917,7 +917,21 @@ class PhotoCatalogApp {
             }
         }
         
-        document.getElementById('photoCount').textContent = `${this.totalPhotosInRange} photos (${filterText})`;
+        let countText = `${this.totalPhotosInRange} photos (${filterText})`;
+        
+        // Show NSFW exclusion count when favorites only is enabled but NSFW is excluded
+        if (this.favoritesOnly && !this.includeNsfw) {
+            try {
+                const excludedCount = await this.getExcludedNsfwCount();
+                if (excludedCount > 0) {
+                    countText += ` • ${excludedCount} NSFW photos not shown`;
+                }
+            } catch (error) {
+                console.error('Error getting excluded NSFW count:', error);
+            }
+        }
+        
+        document.getElementById('photoCount').textContent = countText;
     }
 
     updatePaginationControls() {
@@ -1436,6 +1450,31 @@ class PhotoCatalogApp {
             this.loadPhotos(true); // Reload with new page size
         }
         this.saveConfig(); // Save setting
+    }
+
+    async getExcludedNsfwCount() {
+        // Build filter options for NSFW favorites that would be excluded
+        const nsfwFilters = {
+            ...this.currentFilters,
+            isFavorite: true,  // Only favorites
+            nsfwOnly: true,    // Only NSFW content
+            excludeNsfw: false // Don't exclude NSFW for this count
+        };
+        
+        // Remove conflicting filters
+        delete nsfwFilters.excludeNsfw;
+        
+        try {
+            const nsfwFavorites = await window.electronAPI.getPhotos({ 
+                ...nsfwFilters, 
+                limit: 999999, 
+                offset: 0 
+            });
+            return nsfwFavorites.length;
+        } catch (error) {
+            console.error('Error getting NSFW count:', error);
+            return 0;
+        }
     }
 
     formatFileSize(bytes) {
