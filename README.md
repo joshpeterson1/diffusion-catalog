@@ -1,4 +1,4 @@
-# AI Photo Catalog
+# Diffusion Catalog
 
 A desktop application for managing and cataloging AI-generated photos with smart metadata handling and efficient performance for large collections.
 
@@ -11,12 +11,15 @@ A desktop application for managing and cataloging AI-generated photos with smart
 - **User Annotations**: Favorites, custom tags, NSFW markers, ratings, and notes
 - **Performance Optimized**: Handles 100k+ photos with lazy loading and virtual scrolling
 
-## Installation
+## Installation (Executable)
+1. Hit up releases, download, run
+
+## Installation (Manual)
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd ai-photo-catalog
+git clone https://github.com/joshpeterson1/diffusion-catalog
+cd diffusion-catalog
 ```
 
 2. Install dependencies:
