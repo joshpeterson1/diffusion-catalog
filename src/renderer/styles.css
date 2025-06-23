@@ -569,6 +569,7 @@ body {
     right: 80px;
     left: auto;
     font-size: 16px;
+    opacity: 1; /* Always visible in list view */
 }
 
 .nsfw-indicator.list-view {
@@ -577,6 +578,7 @@ body {
     right: 80px;
     left: auto;
     font-size: 16px;
+    opacity: 1; /* Always visible in list view */
 }
 
 /* Override Bootstrap Icons positioning for list view */
