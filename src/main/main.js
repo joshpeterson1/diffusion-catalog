@@ -361,6 +361,16 @@ class PhotoCatalogApp {
         this.metadataExtractor.clearQueue();
       }
       
+      // Clear the file watcher's in-memory watchers Map and close all watchers
+      if (this.fileWatcher) {
+        for (const watcher of this.fileWatcher.watchers.values()) {
+          if (watcher) {
+            await watcher.close();
+          }
+        }
+        this.fileWatcher.watchers.clear();
+      }
+      
       return await this.database.clearAll();
     });
 
