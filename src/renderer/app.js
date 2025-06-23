@@ -13,6 +13,7 @@ class PhotoCatalogApp {
         this.currentPhotoIndex = -1;
         this.includeNsfw = true;
         this.selectedFolders = [];
+        this.totalPhotosInDatabase = 0;
         
         this.initializeEventListeners();
         
@@ -313,7 +314,12 @@ class PhotoCatalogApp {
             const allPhotos = await window.electronAPI.getPhotos({ ...countOptions, limit: 999999, offset: 0 });
             this.totalPhotosInRange = allPhotos.length;
             
+            // Also get total photos in database (no filters)
+            const allPhotosInDb = await window.electronAPI.getPhotos({ limit: 999999, offset: 0 });
+            this.totalPhotosInDatabase = allPhotosInDb.length;
+            
             console.log('LOADPHOTOS: Total photos in range:', this.totalPhotosInRange);
+            console.log('LOADPHOTOS: Total photos in database:', this.totalPhotosInDatabase);
             console.log('LOADPHOTOS: Current photos array length:', this.photos.length);
 
             this.renderGallery();
@@ -334,7 +340,12 @@ class PhotoCatalogApp {
         gallery.innerHTML = '';
         
         if (this.photos.length === 0) {
-            this.showEmptyState();
+            // Only show "add directory" message if database is truly empty
+            if (this.totalPhotosInDatabase === 0) {
+                this.showEmptyState();
+            } else {
+                this.showNoResultsState();
+            }
         } else {
             this.appendToGallery(this.photos);
         }
@@ -1202,6 +1213,17 @@ class PhotoCatalogApp {
         emptyState.addEventListener('click', () => {
             this.addDirectory();
         });
+    }
+
+    showNoResultsState() {
+        const gallery = document.getElementById('galleryGrid');
+        gallery.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                <h3>No Results Found</h3>
+                <p>Try adjusting your search or filters</p>
+            </div>
+        `;
     }
 
     restoreInputFocus() {
