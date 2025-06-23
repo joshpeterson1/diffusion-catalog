@@ -20,7 +20,7 @@ class PhotoCatalogApp {
     // Initialize metadata extractor
     this.metadataExtractor = new MetadataExtractor(this.database);
 
-    // Initialize file watcher
+    // Initialize file watcher (will set mainWindow reference later)
     this.fileWatcher = new FileWatcher(this.database, this.metadataExtractor);
 
     // Set up IPC handlers
@@ -40,6 +40,11 @@ class PhotoCatalogApp {
     });
 
     this.mainWindow.loadFile('src/renderer/index.html');
+
+    // Set mainWindow reference in fileWatcher for IPC events
+    if (this.fileWatcher) {
+      this.fileWatcher.mainWindow = this.mainWindow;
+    }
 
     if (process.argv.includes('--dev')) {
       this.mainWindow.webContents.openDevTools();

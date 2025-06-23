@@ -62,6 +62,12 @@ class PhotoCatalogApp {
         window.electronAPI.onMenuVitals(() => this.showVitals());
         window.electronAPI.onMenuRebuildDb(() => this.rebuildDatabase());
 
+        // Listen for automatic photo updates from file watcher
+        window.electronAPI.onPhotosUpdated(() => {
+            console.log('Photos updated event received, refreshing gallery...');
+            this.handlePhotosUpdated();
+        });
+
         // View controls
         document.getElementById('gridViewBtn').addEventListener('click', () => this.setViewMode('grid'));
         document.getElementById('listViewBtn').addEventListener('click', () => this.setViewMode('list'));
@@ -1334,6 +1340,18 @@ class PhotoCatalogApp {
             btn.disabled = false;
             btn.style.pointerEvents = '';
         });
+    }
+
+    async handlePhotosUpdated() {
+        try {
+            // Reload watched directories, subfolders, and photos
+            await this.loadWatchedDirectories();
+            await this.loadSubfolders();
+            await this.loadPhotos(true);
+            console.log('Gallery refreshed automatically after file changes');
+        } catch (error) {
+            console.error('Error handling photos updated event:', error);
+        }
     }
 
     formatFileSize(bytes) {

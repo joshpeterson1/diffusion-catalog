@@ -5,9 +5,10 @@ const yauzl = require('yauzl');
 const { promisify } = require('util');
 
 class FileWatcher {
-  constructor(database, metadataExtractor) {
+  constructor(database, metadataExtractor, mainWindow = null) {
     this.database = database;
     this.metadataExtractor = metadataExtractor;
+    this.mainWindow = mainWindow;
     this.watchers = new Map();
     this.supportedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.tiff', '.bmp']);
     this.supportedArchives = new Set(['.zip']);
@@ -141,6 +142,11 @@ class FileWatcher {
       // Queue for metadata extraction
       this.metadataExtractor.queueImage(imageId, filePath);
       
+      // Notify frontend that photos were updated
+      if (this.mainWindow && this.mainWindow.webContents) {
+        this.mainWindow.webContents.send('photos-updated');
+      }
+      
     } catch (error) {
       console.error('Error handling image file:', error);
     }
@@ -179,6 +185,11 @@ class FileWatcher {
         // Queue for metadata extraction
         this.metadataExtractor.queueImage(imageId, archiveImagePath);
         addedCount++;
+      }
+      
+      // Notify frontend that photos were updated (only if we added new images)
+      if (addedCount > 0 && this.mainWindow && this.mainWindow.webContents) {
+        this.mainWindow.webContents.send('photos-updated');
       }
       
       console.log(`Added ${addedCount} new images from ZIP: ${path.basename(filePath)}`);
